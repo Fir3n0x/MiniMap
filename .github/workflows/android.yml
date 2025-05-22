@@ -32,21 +32,16 @@ jobs:
     - name: Run Lint
       run: ./gradlew lint
 
-    - name: Build Signed Release APK
-      env:
-        KEYSTORE: ${{ secrets.KEYSTORE }}
-        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-      run: |
-        echo "$KEYSTORE" | base64 -d > keystore.jks
-        ./gradlew assembleRelease
+    - name: Build Release APK
+      run: ./gradlew assembleRelease
         
-    - name: Upload APK artifact
+    - name: Find and Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: app-release
-        path: app/build/outputs/apk/release/app-release.apk
+        path: |
+          app/build/outputs/apk/**/*release*.apk
+          app/build/outputs/apk/**/*-unsigned.apk
 
   deploy:
     needs: build
@@ -58,35 +53,12 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: app-release
+        path: apk-files/
 
-    # Option 1: Use the community-maintained release action (recommended)
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         generate_release_notes: true
-        files: app-release.apk
+        files: apk-files/*.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    # Option 2: Or use GitHub's official v1 action (if you prefer)
-    # - name: Create Release
-    #   id: create_release
-    #   uses: actions/create-release@v1
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #   with:
-    #     tag_name: v1.0.${{ github.run_number }}
-    #     release_name: Release v1.0.${{ github.run_number }}
-    #     draft: false
-    #     prerelease: false
-
-    # - name: Upload Release Asset
-    #   id: upload-release-asset
-    #   uses: actions/upload-release-asset@v1
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #   with:
-    #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-    #     asset_path: ./app-release.apk
-    #     asset_name: app-release.apk
-    #     asset_content_type: application/vnd.android.package-archive
