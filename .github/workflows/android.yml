@@ -35,14 +35,42 @@ jobs:
 
     - name: Prepare APKs
       run: |
-        mkdir -p release-apks
-        # Copy only signed release builds (exclude debug and unsigned)
-        find app/build/outputs/apk/release -name '*.apk' ! -name '*debug*' ! -name '*unsigned*' -exec cp {} release-apks/ \;
+        # mkdir -p release-apks
+        # # Copy only signed release builds (exclude debug and unsigned)
+        # find app/build/outputs/apk/release -name '*.apk' ! -name '*debug*' ! -name '*unsigned*' -exec cp {} release-apks/ \;
         
-        # Rename with version
+        # # Rename with version
+        # for f in release-apks/*.apk; do
+        #   mv "$f" "release-apks/MiniMap-v$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"(.*)".*/\1/').apk"
+        # done
+
+
+        mkdir -p release-apks
+    
+        # Debug: Show APK locations first
+        echo "Looking for APKs in:"
+        find app/build/outputs/apk -name '*.apk' || echo "No APKs found"
+        
+        # Copy ALL APKs first (we'll filter later)
+        find app/build/outputs/apk -name '*.apk' -exec cp {} release-apks/ \;
+        
+        # Debug: Show what was copied
+        echo "Copied APKs:"
+        ls -la release-apks/
+        
+        # Rename only release builds
         for f in release-apks/*.apk; do
-          mv "$f" "release-apks/MiniMap-v$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"(.*)".*/\1/').apk"
+          if [[ "$f" != *"debug"* ]]; then
+            new_name="release-apks/MiniMap-v$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"(.*)".*/\1/').apk"
+            mv "$f" "$new_name"
+          else
+            rm "$f"  # Remove debug APKs
+          fi
         done
+        
+        # Final check
+        echo "Final APKs:"
+        ls -la release-apks/
         
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
