@@ -35,13 +35,28 @@ jobs:
 
     - name: Prepare APKs
       run: |
+        # mkdir -p release-apks
+        # # Copy all release APKs to a clean directory
+        # find app/build/outputs/apk/release -name '*.apk' -exec cp {} release-apks/ \;
+        # # Rename them (optional)
+        # for f in release-apks/*.apk; do
+        #   mv "$f" "release-apks/MiniMap-v$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"(.*)".*/\1/').apk"
+        # done
+
         mkdir -p release-apks
-        # Copy all release APKs to a clean directory
-        find app/build/outputs/apk/release -name '*.apk' -exec cp {} release-apks/ \;
-        # Rename them (optional)
+        # Copy ONLY release APKs (explicitly exclude debug)
+        find app/build/outputs/apk/release -name '*release*.apk' -exec cp {} release-apks/ \;
+        # Rename them
         for f in release-apks/*.apk; do
           mv "$f" "release-apks/MiniMap-v$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"(.*)".*/\1/').apk"
         done
+
+    - name: Clean Duplicate APKs
+      run: |
+        # Keep only the renamed APK
+        cd apk-files
+        rm -f app-*.apk
+        ls -la
         
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
