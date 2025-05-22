@@ -33,25 +33,25 @@ jobs:
     - name: Build Release APK
       run: ./gradlew assembleRelease
         
-    # - name: Find APK files
-    #   id: find-apk
-    #   run: |
-    #     mkdir -p apk-files
-    #     find app/build/outputs/apk -name '*.apk' -exec cp {} apk-files/ \;
-    #     echo "APK_FILES=$(ls apk-files/ | tr '\n' ' ')" >> $GITHUB_OUTPUT
-    #     ls -la apk-files/
+    - name: Find APK files
+      id: find-apk
+      run: |
+        mkdir -p apk-files
+        find app/build/outputs/apk -name '*.apk' -exec cp {} apk-files/ \;
+        echo "APK_FILES=$(ls apk-files/ | tr '\n' ' ')" >> $GITHUB_OUTPUT
+        ls -la apk-files/
 
-    # - name: Upload APK artifact
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #     name: app-release
-    #     path: apk-files/*.apk
-
-    - name: Find and Upload APK
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-release
-        path: app/build/outputs/apk/**/*.apk
+        path: apk-files/*.apk
+
+    # - name: Find and Upload APK
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: app-release
+    #     path: app/build/outputs/apk/**/*.apk
 
   deploy:
     needs: build
