@@ -55,9 +55,16 @@ jobs:
         name: app-release
         path: apk-files/
 
+    - name: Get version from Gradle
+      id: gradle-version
+      run: |
+        echo "VERSION=$(./gradlew -q printVersionName)" >> $GITHUB_OUTPUT
+      
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
+        tag_name: v${{ steps.gradle-version.outputs.VERSION }}
+        name: Release v${{ steps.gradle-version.outputs.VERSION }}
         generate_release_notes: true
         files: apk-files/*.apk
       env:
