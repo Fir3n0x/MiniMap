@@ -12,10 +12,10 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4  # Updated from v3 to v4
+      uses: actions/checkout@v4
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v4  # Updated from v3 to v4
+      uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: 17
@@ -43,7 +43,7 @@ jobs:
         ./gradlew assembleRelease
         
     - name: Upload APK artifact
-      uses: actions/upload-artifact@v4  # Updated from v3 to v4
+      uses: actions/upload-artifact@v4
       with:
         name: app-release
         path: app/build/outputs/apk/release/app-release.apk
@@ -55,28 +55,38 @@ jobs:
     
     steps:
     - name: Download artifact
-      uses: actions/download-artifact@v4  # Updated from v3 to v4
+      uses: actions/download-artifact@v4
       with:
         name: app-release
 
+    # Option 1: Use the community-maintained release action (recommended)
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v2  # Updated from v1 to v2
+      uses: softprops/action-gh-release@v1
+      with:
+        generate_release_notes: true
+        files: app-release.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v1.0.${{ github.run_number }}
-        release_name: Release v1.0.${{ github.run_number }}
-        draft: false
-        prerelease: false
 
-    - name: Upload Release Asset
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v2  # Updated from v1 to v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./app-release.apk
-        asset_name: app-release.apk
-        asset_content_type: application/vnd.android.package-archive
+    # Option 2: Or use GitHub's official v1 action (if you prefer)
+    # - name: Create Release
+    #   id: create_release
+    #   uses: actions/create-release@v1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     tag_name: v1.0.${{ github.run_number }}
+    #     release_name: Release v1.0.${{ github.run_number }}
+    #     draft: false
+    #     prerelease: false
+
+    # - name: Upload Release Asset
+    #   id: upload-release-asset
+    #   uses: actions/upload-release-asset@v1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+    #     asset_path: ./app-release.apk
+    #     asset_name: app-release.apk
+    #     asset_content_type: application/vnd.android.package-archive
