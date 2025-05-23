@@ -27,7 +27,7 @@ import kotlin.text.clear
 
 @SuppressLint("MissingPermission", "ServiceCast")
 @Composable
-fun WifiRadarScreen(context: Context) {
+fun WifiScanScreen(context: Context) {
     val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 //    val wifiNetworks = remember { mutableStateMapOf<String, WifiNetwork>() }
     val wifiNetworks = remember { mutableStateListOf<WifiNetwork>() }
@@ -49,47 +49,30 @@ fun WifiRadarScreen(context: Context) {
                 val channel = result.channelWidth
                 val frequency = result.frequency
 
-                if (ssid.isBlank()) continue // Ignore les SSID vides
+                if (ssid.isBlank()) continue // ignore empty ssid
 
                 val existing = uniqueNetworks[ssid]
                 if (existing == null) {
-                    // Pas encore ajouté → on ajoute
+                    // no include -> add up
                     uniqueNetworks[ssid] = WifiNetwork(ssid, rssi, capa, bssid, channel, frequency)
                 } else {
-                    // Déjà présent → on compare les RSSI
+                    // already available → compare rssi
                     val diff = kotlin.math.abs(existing.rssi - rssi)
                     if (diff > 5) {
-                        // Différence significative → on garde le plus fort (proche de 0)
+                        // Significative difference → keep the highest (close to 0)
                         if (rssi > existing.rssi) {
                             uniqueNetworks[ssid] = WifiNetwork(ssid, rssi, capa, bssid, channel, frequency)
                         }
                     }
-                    // Sinon → ignorer car redondant
+                    // else, ingored bc redundances
                 }
             }
 
 
             wifiNetworks.clear()
             wifiNetworks.addAll(uniqueNetworks.values)
-            delay(2000) // toutes les 500ms
+            delay(2000)
 
-//            results.forEach{
-//                val ssid = it.SSID
-//                if(ssid.isNotBlank()) {
-//                    wifiNetworks[ssid] = WifiNetwork(ssid, it.level)
-//                }
-//            }
-//
-//            val detectedSsids = results.map {
-//                it.SSID
-//            }.toSet()
-//
-//            val keysToRemove = wifiNetworks.keys - detectedSsids
-//            keysToRemove.forEach {
-//                wifiNetworks.remove(it)
-//            }
-
-//            delay(500)
         }
     }
 
@@ -101,7 +84,7 @@ fun WifiRadarScreen(context: Context) {
 
 @Composable
 @Preview(showBackground = true, backgroundColor = 0xFF000000)
-fun WifiRadarPreview() {
+fun WifiScanPreview() {
     val mockNetworks = listOf(
         WifiNetwork("INSA_WIFI", -0, "", "", 0, 0),
         WifiNetwork("INSA_WIFI", -3, "",  "", 0, 0),
