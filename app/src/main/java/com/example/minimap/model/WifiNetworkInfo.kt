@@ -1,6 +1,6 @@
 package com.example.minimap.model
 
-class WifiNetwork (
+class WifiNetworkInfo (
     val ssid : String,
     val rssi : Int, // Signal power (Received Signal Strength Indicator)
     // 0 perfect signal (impossible) else, -30 / -90

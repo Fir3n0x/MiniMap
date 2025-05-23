@@ -4,33 +4,22 @@ package com.example.minimap.ui.theme
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.wifi.WifiManager
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.sp
-import com.example.minimap.model.WifiNetwork
+import com.example.minimap.model.WifiNetworkInfo
 import kotlinx.coroutines.delay
-import kotlin.collections.addAll
-import kotlin.collections.mutableListOf
-import kotlin.compareTo
-import kotlin.text.clear
 
 @SuppressLint("MissingPermission", "ServiceCast")
 @Composable
 fun WifiScanScreen(context: Context) {
     val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 //    val wifiNetworks = remember { mutableStateMapOf<String, WifiNetwork>() }
-    val wifiNetworks = remember { mutableStateListOf<WifiNetwork>() }
+    val wifiNetworks = remember { mutableStateListOf<WifiNetworkInfo>() }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -39,7 +28,7 @@ fun WifiScanScreen(context: Context) {
             val results = wifiManager.scanResults
 
 
-            val uniqueNetworks = mutableMapOf<String, WifiNetwork>()
+            val uniqueNetworks = mutableMapOf<String, WifiNetworkInfo>()
 
             for(result in results){
                 val ssid = result.SSID
@@ -54,17 +43,17 @@ fun WifiScanScreen(context: Context) {
                 val existing = uniqueNetworks[ssid]
                 if (existing == null) {
                     // no include -> add up
-                    uniqueNetworks[ssid] = WifiNetwork(ssid, rssi, capa, bssid, channel, frequency)
+                    uniqueNetworks[ssid] = WifiNetworkInfo(ssid, rssi, capa, bssid, channel, frequency)
                 } else {
                     // already available → compare rssi
                     val diff = kotlin.math.abs(existing.rssi - rssi)
                     if (diff > 5) {
-                        // Significative difference → keep the highest (close to 0)
+                        // Significant difference → keep the highest (close to 0)
                         if (rssi > existing.rssi) {
-                            uniqueNetworks[ssid] = WifiNetwork(ssid, rssi, capa, bssid, channel, frequency)
+                            uniqueNetworks[ssid] = WifiNetworkInfo(ssid, rssi, capa, bssid, channel, frequency)
                         }
                     }
-                    // else, ingored bc redundances
+                    // else, ignored bc redundancies
                 }
             }
 
@@ -86,13 +75,13 @@ fun WifiScanScreen(context: Context) {
 @Preview(showBackground = true, backgroundColor = 0xFF000000)
 fun WifiScanPreview() {
     val mockNetworks = listOf(
-        WifiNetwork("INSA_WIFI", -0, "", "", 0, 0),
-        WifiNetwork("INSA_WIFI", -3, "",  "", 0, 0),
-        WifiNetwork("INSA_IFI", -10, "",  "", 0, 0),
-        WifiNetwork("INSA_WII", -20, "",  "", 0, 0),
-        WifiNetwork("INSA_WIFI", -50, "",  "", 0, 0),
-        WifiNetwork("Freebox", -70, "",  "", 0, 0),
-        WifiNetwork("Hidden Network", -90, "",  "", 0, 0)
+        WifiNetworkInfo("INSA_WIFI", -0, "", "", 0, 0),
+        WifiNetworkInfo("INSA_WIFI", -3, "",  "", 0, 0),
+        WifiNetworkInfo("INSA_IFI", -10, "",  "", 0, 0),
+        WifiNetworkInfo("INSA_WII", -20, "",  "", 0, 0),
+        WifiNetworkInfo("INSA_WIFI", -50, "",  "", 0, 0),
+        WifiNetworkInfo("Freebox", -70, "",  "", 0, 0),
+        WifiNetworkInfo("Hidden Network", -90, "",  "", 0, 0)
     )
 
     WifiRadarDetection(networks = mockNetworks, modifier = Modifier.fillMaxSize())

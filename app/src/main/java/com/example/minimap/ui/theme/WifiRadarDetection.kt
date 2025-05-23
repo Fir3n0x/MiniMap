@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.items
 import com.example.minimap.autowide
-import com.example.minimap.model.WifiNetwork
+import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiSecurityLevel
 import com.example.minimap.model.getSecurityLevel
 import kotlin.math.abs
@@ -44,7 +44,7 @@ import kotlin.math.sin
 
 @Composable
 fun WifiRadarDetection(
-    networks: List<WifiNetwork>,
+    networks: List<WifiNetworkInfo>,
     modifier: Modifier = Modifier
 ) {
 
@@ -304,7 +304,7 @@ fun WifiRadarDetection(
                                     drawCircle(color = color)
                                 }
                                 Text(
-                                    text = "SSID : ${network.ssid} - RSSI : ${network.rssi}",
+                                    text = "SSID : ${network.ssid} - RSSI : ${network.rssi} dBm",
                                     color = Color.White
                                 )
                                 InfoButton {
