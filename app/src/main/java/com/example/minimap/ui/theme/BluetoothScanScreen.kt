@@ -14,32 +14,53 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import androidx.navigation.testing.TestNavHostController
-import com.example.minimap.autowide
+import com.example.minimap.model.BluetoothScannerView
 import com.google.maps.android.compose.*
 
 
-
 @Composable
-fun BluetoothScanScreen() {
+fun BluetoothScanScreen(viewModel: BluetoothScannerView = viewModel()) {
+    val devices = viewModel.devices
+
+    LaunchedEffect(Unit) {
+        viewModel.startScan()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black),
         contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "Bluetooth scan",
-            fontFamily = autowide,
-            color = Color.Green,
-            fontSize = 20.sp
-        )
+    ){
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text("Appareils Bluetooth détectés :", color = Color.White)
+            Spacer(Modifier.height(8.dp))
+            devices.forEach { device ->
+                Text(text = device, color = Color.Green, fontSize = 14.sp)
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Animation mignonne (exemple fixe pour l’instant)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+                    .background(Color.DarkGray),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🐾", fontSize = 40.sp)
+            }
+        }
     }
 }
 
