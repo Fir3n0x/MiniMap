@@ -68,7 +68,8 @@ class MainActivity : ComponentActivity() {
                     BluetoothScanScreen()
                 }
                 composable(Screen.WifiScan.route){
-                    WifiScanScreen()
+                    val context = LocalContext.current
+                    WifiScanScreen(context)
                 }
             }
         }
