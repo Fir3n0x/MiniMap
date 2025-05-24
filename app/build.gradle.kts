@@ -8,11 +8,6 @@ android {
     namespace = "com.example.minimap"
     compileSdk = 35
 
-    tasks.register("printVersionName") {
-        doLast {
-            println(android.defaultConfig.versionName)
-        }
-    }
 
     defaultConfig {
         applicationId = "com.example.minimap"
