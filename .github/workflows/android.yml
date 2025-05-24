@@ -115,6 +115,7 @@ jobs:
         # Keep only the properly named APK
         ls | grep -v 'MiniMap-v' | xargs rm -f
         ls -la
+
     - name: Verify APK exists
       run: |
         echo "APK files:"
@@ -123,10 +124,11 @@ jobs:
           echo "Error: No APK files found!"
           exit 1
         fi
+
     - name: Check if tag exists
       id: check_tag
       run: |
-        TAG=v${{ steps.validate_version.outputs.VERSION }}
+        TAG=${{ needs.build.outputs.TAG_NAME }}
         if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
           echo "::error::Tag $TAG already exists! Update versionName in build.gradle.kts"
           echo "TAG_EXISTS=true" >> $GITHUB_OUTPUT
@@ -138,10 +140,10 @@ jobs:
       if: steps.check_tag.outputs.TAG_EXISTS == 'false'
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v${{ steps.validate_version.outputs.VERSION }}
-        name: MiniMap v${{ steps.validate_version.outputs.VERSION }}
+        tag_name: ${{ needs.build.outputs.TAG_NAME }}
+        name: MiniMap ${{ needs.build.outputs.TAG_NAME }}
         body: |
-          ### Version ${{ steps.validate_version.outputs.VERSION }}
+          ### Version ${{ needs.build.outputs.VERSION }}
           Release automatically generated from GitHub Actions
           
           ### Assets
