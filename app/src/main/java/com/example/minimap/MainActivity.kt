@@ -99,6 +99,7 @@ fun TerminalButton(text: String, onClick: () -> Unit) {
     }
 }
 
+
 @Preview(showBackground = true, backgroundColor = 0xFF000000)
 @Composable
 fun MiniMapHomeScreenPreview() {
