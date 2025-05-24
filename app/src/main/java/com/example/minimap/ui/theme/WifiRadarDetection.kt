@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.items
+import androidx.navigation.NavController
 import com.example.minimap.autowide
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiSecurityLevel
@@ -44,6 +45,7 @@ import kotlin.math.sin
 
 @Composable
 fun WifiRadarDetection(
+    navController: NavController,
     networks: List<WifiNetworkInfo>,
     modifier: Modifier = Modifier
 ) {
@@ -103,20 +105,45 @@ fun WifiRadarDetection(
 
     Box(modifier = modifier.background(Color.Black)) {
 
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 32.dp),
-            contentAlignment = Alignment.TopCenter
+                .padding(top = 16.dp)
         ) {
-            Text(
-                text = "WiFi Detection",
-                color = Color.Green,
-                fontFamily = autowide,
-                modifier = Modifier,
-                fontSize = 24.sp
-            )
+            // return
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .clickable {
+                        navController.navigate("home")
+                    }
+                    .padding(start = 16.dp) // space from border
+            ) {
+                Text(
+                    text = "<",
+                    color = Color.Green,
+                    fontFamily = autowide,
+                    fontSize = 35.sp
+                )
+            }
+
+            // title
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 4.dp) // vertical
+            ) {
+                Text(
+                    text = "WiFi Detection",
+                    color = Color.Green,
+                    fontFamily = autowide,
+                    fontSize = 24.sp
+                )
+            }
         }
+
+
 
 
 

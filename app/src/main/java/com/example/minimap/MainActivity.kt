@@ -67,11 +67,11 @@ class MainActivity : ComponentActivity() {
                     HomeScreen(navController)
                 }
                 composable(Screen.BluetoothScan.route){
-                    BluetoothScanScreen()
+                    BluetoothScanScreen(navController = navController)
                 }
                 composable(Screen.WifiScan.route){
                     val context = LocalContext.current
-                    WifiScanScreen(context)
+                    WifiScanScreen(context, navController)
                 }
             }
         }

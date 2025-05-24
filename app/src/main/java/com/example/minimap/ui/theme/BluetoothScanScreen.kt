@@ -3,6 +3,7 @@ package com.example.minimap.ui.theme
 import android.Manifest
 import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -22,13 +23,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.example.minimap.autowide
 import com.example.minimap.model.BluetoothDeviceInfo
 import com.example.minimap.model.BluetoothScannerView
 import com.google.maps.android.compose.*
 
 @RequiresPermission(allOf = [Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.ACCESS_FINE_LOCATION])
 @Composable
-fun BluetoothScanScreen(viewModel: BluetoothScannerView = viewModel()) {
+fun BluetoothScanScreen(viewModel: BluetoothScannerView = viewModel(), navController: NavController) {
 
 
 //    val devices = viewModel.devices
@@ -47,45 +51,86 @@ fun BluetoothScanScreen(viewModel: BluetoothScannerView = viewModel()) {
         contentAlignment = Alignment.Center
     ){
 
-        Column(
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
+                .fillMaxWidth()
+                .padding(top = 16.dp)
         ) {
-            Text("Appareils Bluetooth détectés :", color = Color.White)
-            Spacer(Modifier.height(8.dp))
-            devices.value.forEach { device ->
-                Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    Text("Nom: ${device.name ?: "Inconnu"}", color = Color.Green)
-                    Text("Adresse MAC: ${device.address}", color = Color.LightGray, fontSize = 12.sp)
-                    Text("RSSI: ${device.rssi} dBm", color = Color.Cyan, fontSize = 12.sp)
-                    device.deviceClass?.let {
-                        Text("Classe: $it", color = Color.Magenta, fontSize = 12.sp)
+            // return
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .clickable {
+                        navController.navigate("home")
                     }
-                    device.uuidList.let { uuids ->
-                        if (uuids.isNotEmpty()) {
-                            Column {
-                                Text("UUIDs :", color = Color.Red, fontSize = 12.sp)
-                                uuids.forEach { uuid ->
-                                    Text("• $uuid", color = Color.Red, fontSize = 12.sp)
+                    .padding(start = 16.dp) // space from border
+            ) {
+                Text(
+                    text = "<",
+                    color = Color.Green,
+                    fontFamily = autowide,
+                    fontSize = 35.sp
+                )
+            }
+
+            // title
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 4.dp) // vertical
+            ) {
+                Text(
+                    text = "Bluetooth Analysis",
+                    color = Color.Green,
+                    fontFamily = autowide,
+                    fontSize = 24.sp
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp, top = 50.dp)
+            ) {
+                Text("Appareils Bluetooth détectés :", color = Color.White)
+                Spacer(Modifier.height(8.dp))
+                devices.value.forEach { device ->
+                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                        Text("Nom: ${device.name ?: "Inconnu"}", color = Color.Green)
+                        Text(
+                            "Adresse MAC: ${device.address}",
+                            color = Color.LightGray,
+                            fontSize = 12.sp
+                        )
+                        Text("RSSI: ${device.rssi} dBm", color = Color.Cyan, fontSize = 12.sp)
+                        device.deviceClass?.let {
+                            Text("Classe: $it", color = Color.Magenta, fontSize = 12.sp)
+                        }
+                        device.uuidList.let { uuids ->
+                            if (uuids.isNotEmpty()) {
+                                Column {
+                                    Text("UUIDs :", color = Color.Red, fontSize = 12.sp)
+                                    uuids.forEach { uuid ->
+                                        Text("• $uuid", color = Color.Red, fontSize = 12.sp)
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
 
-            // Animation mignonne (exemple fixe pour l’instant)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp)
-                    .background(Color.DarkGray),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("box", fontSize = 40.sp)
+                // Animation mignonne (exemple fixe pour l’instant)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp)
+                        .background(Color.DarkGray),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("box", fontSize = 40.sp)
+                }
             }
         }
     }
@@ -96,5 +141,5 @@ fun BluetoothScanScreen(viewModel: BluetoothScannerView = viewModel()) {
 @Preview(showBackground = true, backgroundColor = 0xFF000000)
 @Composable
 fun BluetoothScanScreenPreview() {
-    BluetoothScanScreen()
+    BluetoothScanScreen(navController = rememberNavController())
 }

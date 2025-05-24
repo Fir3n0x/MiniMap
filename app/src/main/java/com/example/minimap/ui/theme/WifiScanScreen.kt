@@ -11,12 +11,14 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.minimap.model.WifiNetworkInfo
 import kotlinx.coroutines.delay
 
 @SuppressLint("MissingPermission", "ServiceCast")
 @Composable
-fun WifiScanScreen(context: Context) {
+fun WifiScanScreen(context: Context, navController: NavController) {
     val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 //    val wifiNetworks = remember { mutableStateMapOf<String, WifiNetwork>() }
     val wifiNetworks = remember { mutableStateListOf<WifiNetworkInfo>() }
@@ -66,7 +68,7 @@ fun WifiScanScreen(context: Context) {
     }
 
 //    WifiRadarView(networks = wifiNetworks.values.toList(), modifier = Modifier.fillMaxSize())
-    WifiRadarDetection(networks = wifiNetworks.toList(), modifier = Modifier.fillMaxSize())
+    WifiRadarDetection(navController = navController, networks = wifiNetworks.toList(), modifier = Modifier.fillMaxSize())
 }
 
 
@@ -84,5 +86,5 @@ fun WifiScanPreview() {
         WifiNetworkInfo("Hidden Network", -90, "",  "", 0, 0)
     )
 
-    WifiRadarDetection(networks = mockNetworks, modifier = Modifier.fillMaxSize())
+    WifiRadarDetection(navController = rememberNavController(), networks = mockNetworks, modifier = Modifier.fillMaxSize())
 }
