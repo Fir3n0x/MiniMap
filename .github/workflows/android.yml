@@ -19,7 +19,7 @@ jobs:
       id: version
       run: |
         # Extract version with robust parsing
-        VERSION=$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"([0-9.]+).*".*/\1/')
+        VERSION=$(grep -E '^\s*versionName\s*=' app/build.gradle.kts | sed -E 's/.*"([0-9]+\.[0-9]+(\.[0-9]+)?)".*/\1/')
         
         # Ensure proper format (add .0 if only X.Y format)
         [[ "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]] && VERSION="${VERSION}.0"
