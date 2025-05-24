@@ -25,26 +25,22 @@ jobs:
     - name: Get Gradle Version
       id: gradle-version
       run: |
-        # Create a simple Gradle task to print version
-        cat << 'EOF' > version.gradle
-        tasks.register('printVersion') {
-            doLast {
-                println(android.defaultConfig.versionName)
-            }
-        }
+        # Create a temporary build file to print version
+        cat << 'EOF' > printversion.gradle
+        println(project.android.defaultConfig.versionName)
         EOF
         
-        # Run the task and capture output
-        VERSION=$(./gradlew -q -I version.gradle printVersion --console=plain)
+        # Run the script and capture version
+        VERSION=$(./gradlew -q -I printversion.gradle --console=plain)
         echo "Extracted version: '$VERSION'"
         
         # Clean up
-        rm version.gradle
+        rm printversion.gradle
         
-        # Set outputs (using proper formatting)
-        echo "VERSION=${VERSION}" >> $GITHUB_ENV
-        echo "version=${VERSION}" >> $GITHUB_OUTPUT
-        echo "tag_name=v${VERSION}" >> $GITHUB_OUTPUT
+        # Set outputs
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag_name=v$VERSION" >> $GITHUB_OUTPUT
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Build with Gradle
       run: ./gradlew build
@@ -61,7 +57,7 @@ jobs:
     - name: Prepare APKs
       run: |
         mkdir -p release-apks
-        find app/build/outputs/apk -name '*.apk' ! -name '*debug*' -exec cp {} release-apks/ \;
+        find app/build/outputs/apk/release -name '*.apk' ! -name '*debug*' -exec cp {} release-apks/ \;
         for f in release-apks/*.apk; do
           mv "$f" "release-apks/MiniMap-v${VERSION}.apk"
         done
