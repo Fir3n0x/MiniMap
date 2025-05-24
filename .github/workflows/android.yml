@@ -25,26 +25,26 @@ jobs:
     - name: Get Gradle Version
       id: gradle-version
       run: |
-        # First try to get version from gradle.properties
-        if [ -f "gradle.properties" ]; then
-          VERSION=$(grep '^version=' gradle.properties | cut -d= -f2 | tr -d "'\"")
-        fi
+        # Create a simple Gradle task to print version
+        cat << 'EOF' > version.gradle
+        tasks.register('printVersion') {
+            doLast {
+                println(android.defaultConfig.versionName)
+            }
+        }
+        EOF
         
-        # If not found, try build.gradle.kts
-        if [ -z "$VERSION" ]; then
-          VERSION=$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"([0-9.]+).*".*/\1/')
-        fi
+        # Run the task and capture output
+        VERSION=$(./gradlew -q -I version.gradle printVersion --console=plain)
+        echo "Extracted version: '$VERSION'"
         
-        # Ensure version exists
-        if [ -z "$VERSION" ]; then
-          echo "::error::Could not determine version!"
-          exit 1
-        fi
+        # Clean up
+        rm version.gradle
         
-        echo "Extracted version: $VERSION"
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "tag_name=v$VERSION" >> $GITHUB_OUTPUT
+        # Set outputs (using proper formatting)
+        echo "VERSION=${VERSION}" >> $GITHUB_ENV
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "tag_name=v${VERSION}" >> $GITHUB_OUTPUT
 
     - name: Build with Gradle
       run: ./gradlew build
@@ -65,7 +65,6 @@ jobs:
         for f in release-apks/*.apk; do
           mv "$f" "release-apks/MiniMap-v${VERSION}.apk"
         done
-        ls -la release-apks/
 
     - name: Upload Release APK
       uses: actions/upload-artifact@v4
