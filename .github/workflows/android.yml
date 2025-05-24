@@ -184,4 +184,5 @@ jobs:
           app/build/outputs/mapping/release/mapping.txt
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
 solve version name release · Fir3n0x/MiniMap@40061b3 
