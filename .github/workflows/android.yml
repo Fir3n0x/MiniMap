@@ -15,23 +15,29 @@ jobs:
       with:
         fetch-depth: 0  # Needed for changelog generation
 
-    - name: Extract Version
+    - name: Extract and Validate Version
       id: version
       run: |
-        # Extract version with robust parsing
-        VERSION=$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"([0-9.]+).*".*/\1/')
+        # Robust version extraction
+        VERSION=$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"([0-9]+(?:\.[0-9]+)*).*".*/\1/')
         
-        # Ensure proper format (add .0 if only X.Y format)
-        [[ "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]] && VERSION="${VERSION}.0"
+        # Ensure proper format
+        if [[ "$VERSION" =~ ^[0-9]+$ ]]; then
+          VERSION="${VERSION}.0.0"
+        elif [[ "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+          VERSION="${VERSION}.0"
+        fi
         
-        # Validate format
+        # Final validation
         if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "::error::Invalid version format. Found '$VERSION' but expected MAJOR.MINOR.PATCH"
+          echo "::error::Invalid version format in build.gradle.kts: '$VERSION'"
+          echo "Use MAJOR.MINOR.PATCH format (e.g., 1.0.0)"
           exit 1
         fi
         
         echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
         echo "TAG_NAME=v${VERSION}" >> $GITHUB_OUTPUT
+        echo "Extracted version: ${VERSION}"
 
 
     - name: Set up JDK 17
@@ -55,50 +61,32 @@ jobs:
     - name: Build Release APK
       run: ./gradlew assembleRelease
 
-    - name: Prepare APKs
+    - name: Prepare Release Assets
       run: |
-        # mkdir -p release-apks
-        # # Copy only signed release builds (exclude debug and unsigned)
-        # find app/build/outputs/apk/release -name '*.apk' ! -name '*debug*' ! -name '*unsigned*' -exec cp {} release-apks/ \;
+        mkdir -p release-assets
         
-        # # Rename with version
-        # for f in release-apks/*.apk; do
-        #   mv "$f" "release-apks/MiniMap-v$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"(.*)".*/\1/').apk"
-        # done
-
-
-        mkdir -p release-apks
-    
-        # Debug: Show APK locations first
-        echo "Looking for APKs in:"
-        find app/build/outputs/apk -name '*.apk' || echo "No APKs found"
+        # APKs
+        find app/build/outputs/apk -name '*.apk' ! -name '*debug*' -exec cp {} release-assets/ \;
         
-        # Copy ALL APKs first (we'll filter later)
-        find app/build/outputs/apk -name '*.apk' -exec cp {} release-apks/ \;
-        
-        # Debug: Show what was copied
-        echo "Copied APKs:"
-        ls -la release-apks/
-        
-        # Rename only release builds
-        for f in release-apks/*.apk; do
-          if [[ "$f" != *"debug"* ]]; then
-            new_name="release-apks/MiniMap-v$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"(.*)".*/\1/').apk"
-            mv "$f" "$new_name"
-          else
-            rm "$f"  # Remove debug APKs
-          fi
+        # Rename APKs with version
+        for f in release-assets/*.apk; do
+          mv "$f" "release-assets/MiniMap-v${{ steps.version.outputs.VERSION }}.apk"
         done
         
-        # Final check
-        echo "Final APKs:"
-        ls -la release-apks/
+        # Mapping file (if exists)
+        if [ -f "app/build/outputs/mapping/release/mapping.txt" ]; then
+          cp app/build/outputs/mapping/release/mapping.txt release-assets/
+        else
+          echo "Warning: mapping.txt not found"
+        fi
         
-    - name: Upload Release APK
+        ls -la release-assets/
+
+    - name: Upload Release Assets
       uses: actions/upload-artifact@v4
       with:
-        name: app-release
-        path: release-apks/*.apk
+        name: release-assets
+        path: release-assets/*
 
   deploy:
     needs: build
@@ -106,34 +94,27 @@ jobs:
     if: github.ref == 'refs/heads/main'
     
     steps:
-    - name: Download artifact
+    - name: Download Assets
       uses: actions/download-artifact@v4
       with:
-        name: app-release
-        path: apk-files/
+        name: release-assets
+        path: release-assets/
 
-    - name: Clean Duplicate APKs
+    - name: Verify Assets
       run: |
-        cd apk-files
-        # Keep only the properly named APK
-        ls | grep -v 'MiniMap-v' | xargs rm -f
-        ls -la
-
-    - name: Verify APK exists
-      run: |
-        echo "APK files:"
-        ls -la apk-files/
-        if [ $(ls apk-files/ | wc -l) -eq 0 ]; then
-          echo "Error: No APK files found!"
+        echo "Release assets:"
+        ls -la release-assets/
+        if [ ! -f "release-assets/MiniMap-v${{ needs.build.outputs.VERSION }}.apk" ]; then
+          echo "::error::APK file missing!"
           exit 1
         fi
 
-    - name: Check if tag exists
+    - name: Check Tag Existence
       id: check_tag
       run: |
-        TAG=v${{ steps.validate_version.outputs.VERSION }}
-        if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-          echo "::error::Tag $TAG already exists! Update versionName in build.gradle.kts"
+        TAG="${{ needs.build.outputs.TAG_NAME }}"
+        if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+          echo "::error::Tag ${TAG} already exists!"
           echo "TAG_EXISTS=true" >> $GITHUB_OUTPUT
           exit 1
         else
@@ -144,19 +125,20 @@ jobs:
       if: steps.check_tag.outputs.TAG_EXISTS == 'false'
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v${{ steps.validate_version.outputs.VERSION }}
-        name: MiniMap v${{ steps.validate_version.outputs.VERSION }}
+        tag_name: ${{ needs.build.outputs.TAG_NAME }}
+        name: MiniMap ${{ needs.build.outputs.TAG_NAME }}
         body: |
-          ### Version ${{ steps.validate_version.outputs.VERSION }}
-          Release automatically generated from GitHub Actions
+          ### Version ${{ needs.build.outputs.VERSION }}
+          | Key | Value |
+          |-----|-------|
+          | Build Date | $(date -u +"%Y-%m-%d %H:%M:%S %Z") |
+          | Commit | ${{ github.sha }} |
           
           ### Assets
-          - APK file
-          - ProGuard mapping file
-        draft: false
-        prerelease: false
+          - APK: MiniMap-v${{ needs.build.outputs.VERSION }}.apk
+          $([ -f "release-assets/mapping.txt" ] && echo "- ProGuard mapping")
         files: |
-          apk-files/*.apk
-          app/build/outputs/mapping/release/mapping.txt
+          release-assets/MiniMap-v${{ needs.build.outputs.VERSION }}.apk
+          $([ -f "release-assets/mapping.txt" ] && echo "release-assets/mapping.txt")
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
