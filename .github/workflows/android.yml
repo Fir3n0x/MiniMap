@@ -25,11 +25,26 @@ jobs:
     - name: Get Gradle Version
       id: gradle-version
       run: |
-        # Extract version using Gradle task
-        VERSION=$(./gradlew -q printVersionName)
+        # First try to get version from gradle.properties
+        if [ -f "gradle.properties" ]; then
+          VERSION=$(grep '^version=' gradle.properties | cut -d= -f2 | tr -d "'\"")
+        fi
+        
+        # If not found, try build.gradle.kts
+        if [ -z "$VERSION" ]; then
+          VERSION=$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"([0-9.]+).*".*/\1/')
+        fi
+        
+        # Ensure version exists
+        if [ -z "$VERSION" ]; then
+          echo "::error::Could not determine version!"
+          exit 1
+        fi
+        
         echo "Extracted version: $VERSION"
-        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-        echo "TAG_NAME=v$VERSION" >> $GITHUB_OUTPUT
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag_name=v$VERSION" >> $GITHUB_OUTPUT
 
     - name: Build with Gradle
       run: ./gradlew build
@@ -48,7 +63,7 @@ jobs:
         mkdir -p release-apks
         find app/build/outputs/apk -name '*.apk' ! -name '*debug*' -exec cp {} release-apks/ \;
         for f in release-apks/*.apk; do
-          mv "$f" "release-apks/MiniMap-v${{ steps.gradle-version.outputs.VERSION }}.apk"
+          mv "$f" "release-apks/MiniMap-v${VERSION}.apk"
         done
         ls -la release-apks/
 
@@ -78,33 +93,20 @@ jobs:
           exit 1
         fi
 
-    - name: Check if tag exists
-      id: check-tag
-      run: |
-        TAG="v${{ needs.build.outputs.VERSION }}"
-        if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-          echo "::error::Tag $TAG already exists!"
-          echo "TAG_EXISTS=true" >> $GITHUB_OUTPUT
-          exit 1
-        else
-          echo "TAG_EXISTS=false" >> $GITHUB_OUTPUT
-        fi
-
     - name: Create Release
-      if: steps.check-tag.outputs.TAG_EXISTS == 'false'
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v${{ needs.build.outputs.VERSION }}
-        name: MiniMap v${{ needs.build.outputs.VERSION }}
+        tag_name: v${{ needs.build.outputs.version }}
+        name: MiniMap v${{ needs.build.outputs.version }}
         body: |
-          ### Version ${{ needs.build.outputs.VERSION }}
+          ### Version ${{ needs.build.outputs.version }}
           | Key | Value |
           |-----|-------|
           | Build Date | $(date -u +"%Y-%m-%d %H:%M:%S %Z") |
           | Commit | ${{ github.sha }} |
           
           ### Assets
-          - APK: MiniMap-v${{ needs.build.outputs.VERSION }}.apk
+          - APK: MiniMap-v${{ needs.build.outputs.version }}.apk
         files: |
           apk-files/*.apk
       env:
