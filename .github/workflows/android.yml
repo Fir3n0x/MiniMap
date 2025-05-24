@@ -18,18 +18,27 @@ jobs:
     - name: Extract Version
       id: version
       run: |
-        # Extract version with robust parsing
-        VERSION=$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"([0-9.]+).*".*/\1/')
+        # First try to get version from gradle.properties (common location)
+        if [ -f "gradle.properties" ]; then
+          VERSION=$(grep 'versionName' gradle.properties || grep 'version' gradle.properties | sed -E 's/.*version.*=.*"?(.*[0-9].*)"?/\1/')
+        fi
         
-        # Ensure proper format (add .0 if only X.Y format)
+        # Fallback to build.gradle.kts
+        if [ -z "$VERSION" ]; then
+          VERSION=$(grep 'versionName' app/build.gradle.kts | sed -E 's/.*versionName.*=.*"([0-9.]+).*".*/\1/')
+        fi
+        
+        # Ensure proper format
+        [[ "$VERSION" =~ ^[0-9]+$ ]] && VERSION="${VERSION}.0.0"
         [[ "$VERSION" =~ ^[0-9]+\.[0-9]+$ ]] && VERSION="${VERSION}.0"
         
-        # Validate format
+        # Final validation
         if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "::error::Invalid version format. Found '$VERSION' but expected MAJOR.MINOR.PATCH"
           exit 1
         fi
         
+        echo "Extracted version: ${VERSION}"
         echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
         echo "TAG_NAME=v${VERSION}" >> $GITHUB_OUTPUT
 
@@ -106,6 +115,13 @@ jobs:
     if: github.ref == 'refs/heads/main'
     
     steps:
+
+    - name: Debug Outputs
+      run: |
+        echo "Build outputs:"
+        echo "VERSION: ${{ needs.build.outputs.VERSION }}"
+        echo "TAG_NAME: ${{ needs.build.outputs.TAG_NAME }}"
+
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
@@ -144,17 +160,19 @@ jobs:
       if: steps.check_tag.outputs.TAG_EXISTS == 'false'
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ needs.build.outputs.TAG_NAME }}  # Changed this line
-        name: MiniMap ${{ needs.build.outputs.TAG_NAME }}  # Changed this line
+        tag_name: ${{ needs.build.outputs.TAG_NAME }}
+        name: MiniMap ${{ needs.build.outputs.TAG_NAME }}
         body: |
-          ### Version ${{ needs.build.outputs.VERSION }}  # Changed this line
-          Release automatically generated from GitHub Actions
+          ### Version ${{ needs.build.outputs.VERSION }}
+          | Key | Value |
+          |-----|-------|
+          | Build Date | $(date -u +"%Y-%m-%d %H:%M:%S %Z") |
+          | Commit | ${{ github.sha }} |
           
           ### Assets
-          - APK file
-          - ProGuard mapping file
+          - APK: MiniMap-v${{ needs.build.outputs.VERSION }}.apk
         files: |
           apk-files/*.apk
-          app/build/outputs/mapping/release/mapping.txt
+          $([ -f "app/build/outputs/mapping/release/mapping.txt" ] && echo "app/build/outputs/mapping/release/mapping.txt")
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
