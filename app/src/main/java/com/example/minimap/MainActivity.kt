@@ -73,6 +73,9 @@ class MainActivity : ComponentActivity() {
                     val context = LocalContext.current
                     WifiScanScreen(context, navController)
                 }
+                composable(Screen.FileViewer.route){
+                    FileViewerScreen(navController = navController)
+                }
             }
         }
     }
