@@ -15,9 +15,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.navigation.NavController
 import com.example.minimap.autowide
 import com.example.minimap.model.WifiNetworkInfo
@@ -47,6 +51,8 @@ import kotlin.math.sin
 fun WifiRadarDetection(
     navController: NavController,
     networks: List<WifiNetworkInfo>,
+    isRunning: Boolean,
+    onToggleRunning: () -> Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -63,6 +69,9 @@ fun WifiRadarDetection(
 
 
     var selectedSsid by remember { mutableStateOf<String?>(null) }
+
+
+//    var isRunning by remember { mutableStateOf(true) }
 
 
 
@@ -144,126 +153,161 @@ fun WifiRadarDetection(
         }
 
 
+        Column (
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 60.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
-
-
-        Canvas(modifier = Modifier.fillMaxSize().padding(top = 32.dp, bottom = 100.dp)) {
-
-
-
-
-            // Radar length
-            val rawWidth = size.width * 0.8f
-            val rawHeight = size.height * 0.5f
-
-
-            val gridStep = 50f
-            // Multiple of gridstep
-            val radarWidth = (rawWidth / gridStep).toInt() * gridStep
-            val radarHeight = (rawHeight / gridStep).toInt() * gridStep
-
-
-            val topLeft = Offset((size.width - radarWidth) / 2, (size.height - radarHeight) / 2)
-            val bottomRight = Offset(topLeft.x + radarWidth, topLeft.y + radarHeight)
-            val center = Offset(size.width / 2, size.height / 2)
+            Box(
+                modifier = Modifier
+                    .weight(0.8f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
 
 
 
 
-
-            // 1. Radar frame
-            drawRect(
-                color = Color.Black,
-                topLeft = topLeft,
-                size = androidx.compose.ui.geometry.Size(radarWidth, radarHeight)
-            )
+                    // Radar length
+                    val rawWidth = size.width * 0.8f
+                    val rawHeight = size.height * 0.5f
 
 
+                    val gridStep = 50f
+                    // Multiple of gridstep
+                    val radarWidth = (rawWidth / gridStep).toInt() * gridStep
+                    val radarHeight = (rawHeight / gridStep).toInt() * gridStep
 
 
-            var x = topLeft.x
-            while (x <= bottomRight.x) {
-                drawLine(
-                    color = Color.Green.copy(alpha = 0.3f),
-                    start = Offset(x, topLeft.y),
-                    end = Offset(x, bottomRight.y)
-                )
-                x += gridStep
-            }
-
-            var y = topLeft.y
-            while (y <= bottomRight.y) {
-                drawLine(
-                    color = Color.Green.copy(alpha = 0.3f),
-                    start = Offset(topLeft.x, y),
-                    end = Offset(bottomRight.x, y)
-                )
-                y += gridStep
-            }
-
-            // Central point (user)
-            drawCircle(
-                color = Color.Blue,
-                radius = 10f,
-                center = center
-            )
+                    val topLeft = Offset((size.width - radarWidth) / 2, (size.height - radarHeight) / 2)
+                    val bottomRight = Offset(topLeft.x + radarWidth, topLeft.y + radarHeight)
+                    val center = Offset(size.width / 2, size.height / 2)
 
 
 
 
 
-            with(drawContext.canvas) {
-                save() // save context
-                clipRect(topLeft.x, topLeft.y, bottomRight.x, bottomRight.y)
-
-                drawCircle(
-                    color = Color.Green.copy(alpha = 0.3f * (1 - radarPulse.value)),
-                    center = center,
-                    radius = radarPulse.value * (radarHeight / 2f)
-                )
-
-                restore() // restore context
-            }
+                    // 1. Radar frame
+                    drawRect(
+                        color = Color.Black,
+                        topLeft = topLeft,
+                        size = androidx.compose.ui.geometry.Size(radarWidth, radarHeight)
+                    )
 
 
-            networks.forEachIndexed { index, network ->
-
-                val strength = (abs(network.rssi)).coerceIn(0, 100)
-                val maxDistanceH = radarHeight / 2f
-                val maxDistanceW = radarWidth / 2f
-                val distanceH = (strength / 100f) * maxDistanceH
-                val distanceW = (strength / 100f) * maxDistanceW
-
-                // Random direction for ssid
-                val seed = network.ssid.hashCode()
-                // val angle = remember(seed) { Random(seed).nextFloat() * 2f * Math.PI }.toFloat()
-                val angle = angles[network.ssid] ?: 0f
-                val x = center.x + distanceW * cos(angle)
-                val y = center.y + distanceH * sin(angle)
-                val pos = Offset(x, y)
 
 
-                val color = when (getSecurityLevel(network.capabilities)) {
-                    WifiSecurityLevel.SAFE -> Color.Green
-                    WifiSecurityLevel.MEDIUM -> Color.Yellow
-                    WifiSecurityLevel.DANGEROUS -> Color.Red
+                    var x = topLeft.x
+                    while (x <= bottomRight.x) {
+                        drawLine(
+                            color = Color.Green.copy(alpha = 0.3f),
+                            start = Offset(x, topLeft.y),
+                            end = Offset(x, bottomRight.y)
+                        )
+                        x += gridStep
+                    }
+
+                    var y = topLeft.y
+                    while (y <= bottomRight.y) {
+                        drawLine(
+                            color = Color.Green.copy(alpha = 0.3f),
+                            start = Offset(topLeft.x, y),
+                            end = Offset(bottomRight.x, y)
+                        )
+                        y += gridStep
+                    }
+
+                    // Central point (user)
+                    drawCircle(
+                        color = Color.Blue,
+                        radius = 10f,
+                        center = center
+                    )
+
+
+
+
+                    if(isRunning) {
+                        with(drawContext.canvas) {
+                            save() // save context
+                            clipRect(topLeft.x, topLeft.y, bottomRight.x, bottomRight.y)
+
+                            drawCircle(
+                                color = Color.Green.copy(alpha = 0.3f * (1 - radarPulse.value)),
+                                center = center,
+                                radius = radarPulse.value * (radarHeight / 2f)
+                            )
+
+                            restore() // restore context
+                        }
+                    }
+
+                    networks.forEachIndexed { index, network ->
+
+                        val strength = (abs(network.rssi)).coerceIn(0, 100)
+                        val maxDistanceH = radarHeight / 2f
+                        val maxDistanceW = radarWidth / 2f
+                        val distanceH = (strength / 100f) * maxDistanceH
+                        val distanceW = (strength / 100f) * maxDistanceW
+
+                        // Random direction for ssid
+                        val seed = network.ssid.hashCode()
+                        // val angle = remember(seed) { Random(seed).nextFloat() * 2f * Math.PI }.toFloat()
+                        val angle = angles[network.ssid] ?: 0f
+                        val x = center.x + distanceW * cos(angle)
+                        val y = center.y + distanceH * sin(angle)
+                        val pos = Offset(x, y)
+
+
+                        val color = when (getSecurityLevel(network.capabilities)) {
+                            WifiSecurityLevel.SAFE -> Color.Green
+                            WifiSecurityLevel.MEDIUM -> Color.Yellow
+                            WifiSecurityLevel.DANGEROUS -> Color.Red
+                        }
+
+                        // Pulse circle
+                        if(isRunning) {
+                            drawCircle(
+                                color = color.copy(alpha = 0.4f * (1 - pulse.value)),
+                                radius = 30f + 30f * pulse.value,
+                                center = pos
+                            )
+                        }
+
+                        // Network point
+                        drawCircle(
+                            color = if (network.ssid == selectedSsid) Color.White else color,
+                            radius = if (network.ssid == selectedSsid) 20f else 10f,
+                            center = pos
+                        )
+                    }
                 }
-
-                // Pulse circle
-                drawCircle(
-                    color = color.copy(alpha = 0.4f * (1 - pulse.value)),
-                    radius = 30f + 30f * pulse.value,
-                    center = pos
-                )
-
-                // Network point
-                drawCircle(
-                    color = if (network.ssid == selectedSsid) Color.White else color,
-                    radius = if (network.ssid == selectedSsid) 20f else 10f,
-                    center = pos
-                )
             }
+
+
+            Text(
+                text = if (isRunning) "|| Pause" else "|>| Resume",
+                color = Color.Green,
+                fontFamily = autowide,
+                fontSize = 18.sp,
+                modifier = Modifier
+                    .background(Color(0xFF232222), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+                    .clickable { onToggleRunning() }
+            )
+
+            Spacer(modifier = Modifier.height(listHeight + 20.dp))
+//            Spacer(modifier = Modifier.weight(0.2f))  // Takes remaining 40% of space
         }
+
+
+
+
+
+
 
 
 

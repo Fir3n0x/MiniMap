@@ -7,8 +7,11 @@ import android.net.wifi.WifiManager
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
@@ -19,12 +22,18 @@ import kotlinx.coroutines.delay
 @SuppressLint("MissingPermission", "ServiceCast")
 @Composable
 fun WifiScanScreen(context: Context, navController: NavController) {
+
+
     val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 //    val wifiNetworks = remember { mutableStateMapOf<String, WifiNetwork>() }
     val wifiNetworks = remember { mutableStateListOf<WifiNetworkInfo>() }
 
-    LaunchedEffect(Unit) {
-        while (true) {
+
+    var isRunning by remember { mutableStateOf(true) }
+
+
+    LaunchedEffect(isRunning) {
+        while (isRunning) {
             wifiManager.startScan()
             delay(1000)
             val results = wifiManager.scanResults
@@ -68,7 +77,7 @@ fun WifiScanScreen(context: Context, navController: NavController) {
     }
 
 //    WifiRadarView(networks = wifiNetworks.values.toList(), modifier = Modifier.fillMaxSize())
-    WifiRadarDetection(navController = navController, networks = wifiNetworks.toList(), modifier = Modifier.fillMaxSize())
+    WifiRadarDetection(navController = navController, networks = wifiNetworks.toList(), isRunning = isRunning, onToggleRunning = {isRunning = !isRunning}, modifier = Modifier.fillMaxSize())
 }
 
 
@@ -86,5 +95,7 @@ fun WifiScanPreview() {
         WifiNetworkInfo("Hidden Network", -90, "",  "", 0, 0)
     )
 
-    WifiRadarDetection(navController = rememberNavController(), networks = mockNetworks, modifier = Modifier.fillMaxSize())
+    var isRunning: Boolean = true
+
+    WifiRadarDetection(navController = rememberNavController(), networks = mockNetworks, isRunning = isRunning, onToggleRunning = {isRunning = !isRunning}, modifier = Modifier.fillMaxSize())
 }
