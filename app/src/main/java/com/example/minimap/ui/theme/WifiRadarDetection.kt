@@ -1,5 +1,6 @@
 package com.example.minimap.ui.theme
 
+import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.example.minimap.autowide
 import com.example.minimap.model.WifiNetworkInfo
@@ -46,6 +48,9 @@ import com.example.minimap.model.getSecurityLevel
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+
 
 @Composable
 fun WifiRadarDetection(
@@ -107,6 +112,19 @@ fun WifiRadarDetection(
     }.toMap()
 
 
+    val context = LocalContext.current
+    var showExportDialog by remember { mutableStateOf(false) }
+
+    if (showExportDialog) {
+        ExportDialog(
+            networks = networks,
+            onDismiss = { showExportDialog = false },
+            onConfirm = { fileName ->
+                exportNetworksToJson(context, networks, fileName)
+            }
+        )
+    }
+
 
 
 
@@ -149,6 +167,16 @@ fun WifiRadarDetection(
                     fontFamily = autowide,
                     fontSize = 24.sp
                 )
+            }
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(end = 16.dp)
+            ) {
+                ExportButton {
+                    showExportDialog = true
+                }
             }
         }
 
@@ -417,3 +445,24 @@ fun InfoButton(onClick: () -> Unit) {
         Text("i", color = Color.White)
     }
 }
+
+@Composable
+fun ExportButton(onClick: () -> Unit) {
+    Text(
+        text = "[+]",
+        color = Color.Green,
+        fontFamily = autowide,
+        fontSize = 14.sp,
+        modifier = Modifier
+            .background(Color(0xFF232222), RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .clickable { onClick() }
+    )
+}
+
+//fun exportNetworksToJson(networks: List<WifiNetworkInfo>) {
+//    val jsonData = Json { prettyPrint = true }.encodeToString(networks)
+//    Log.d("Export", jsonData)
+//
+//    // TODO: Save in local file
+//}

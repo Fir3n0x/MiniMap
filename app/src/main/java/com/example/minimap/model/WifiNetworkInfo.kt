@@ -1,6 +1,9 @@
 package com.example.minimap.model
 
-class WifiNetworkInfo (
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class WifiNetworkInfo (
     val ssid : String,
     val rssi : Int, // Signal power (Received Signal Strength Indicator)
     // 0 perfect signal (impossible) else, -30 / -90

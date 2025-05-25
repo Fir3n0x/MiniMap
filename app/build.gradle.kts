@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -14,12 +15,13 @@ android {
         }
     }
 
+
     defaultConfig {
         applicationId = "com.example.minimap"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "1.2.0"
+        versionName = "1.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -66,4 +68,5 @@ dependencies {
     implementation(libs.androidx.navigation.testing)
     implementation(libs.google.maps)
     implementation(libs.maps.compose)
+    implementation(libs.kotlinx.serialization.json)
 }
