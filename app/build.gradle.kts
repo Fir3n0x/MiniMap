@@ -21,7 +21,7 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "1.4.1"
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -69,4 +69,5 @@ dependencies {
     implementation(libs.google.maps)
     implementation(libs.maps.compose)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.accompanist.permissions)
 }

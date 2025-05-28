@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,14 +35,29 @@ fun HomeScreen(navController : NavController) {
         contentAlignment = Alignment.Center
     ) {
 
-        ParameterButton(
-            onClick = {
-                navController.navigate("fileViewer")
-            },
+        Row(
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        )
+                .align(Alignment.TopCenter)
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            ParameterButton(
+                onClick = {
+                    navController.navigate("parameterViewer")
+                },
+                modifier = Modifier
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            StoredButton(
+                onClick = {
+                    navController.navigate("fileViewer")
+                },
+                modifier = Modifier
+            )
+        }
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -56,10 +73,6 @@ fun HomeScreen(navController : NavController) {
                 textAlign = TextAlign.Center
             )
 
-            TerminalButton("Bluetooth Analysis") {
-                navController.navigate(Screen.BluetoothScan.route)
-            }
-
             TerminalButton("WiFi Detection") {
                 navController.navigate(Screen.WifiScan.route)
             }
@@ -71,7 +84,7 @@ fun HomeScreen(navController : NavController) {
 
 
 @Composable
-fun ParameterButton(onClick: () -> Unit, modifier: Modifier) {
+fun StoredButton(onClick: () -> Unit, modifier: Modifier) {
     Text(
         text = "|||\\",
         color = Color.Green,
@@ -80,6 +93,20 @@ fun ParameterButton(onClick: () -> Unit, modifier: Modifier) {
         modifier = modifier
             .background(Color(0xFF232222), RoundedCornerShape(8.dp))
             .padding(horizontal = 12.dp, vertical = 6.dp)
+            .clickable { onClick() }
+    )
+}
+
+@Composable
+fun ParameterButton(onClick: () -> Unit, modifier: Modifier){
+    Text(
+        text = "ooo",
+        color = Color.Green,
+        fontFamily = autowide,
+        fontSize = 14.sp,
+        modifier = modifier
+            .background(Color(0xFF232222), RoundedCornerShape(8.dp))
+            .padding(horizontal = 2.dp, vertical = 6.dp)
             .clickable { onClick() }
     )
 }
