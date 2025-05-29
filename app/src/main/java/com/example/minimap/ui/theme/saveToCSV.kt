@@ -80,7 +80,7 @@ fun appendNewWifisToCsv(context: Context, fileName: String, newNetworks: List<Wi
     newNetworks.forEach { network ->
         val key = "${network.ssid}:${network.bssid}"
         if (!knownKeys.contains(key)) {
-            val line = "${network.ssid};${network.bssid};${network.rssi};${network.frequency};${network.capabilities};${currentTime}\n"
+            val line = "${network.ssid};${network.bssid};${network.rssi};${network.frequency};${network.capabilities};${formattedTime}\n"
             file.appendText(line)
             knownKeys.add(key)
         }

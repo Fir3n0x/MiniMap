@@ -406,7 +406,6 @@ fun WifiRadarDetection(
                                 )
                                 InfoButton {
                                     expandedSsid = if (expandedSsid == network.ssid) null else network.ssid
-                                    //println("Info sur ${network.ssid}")
                                 }
                             }
 
@@ -418,7 +417,6 @@ fun WifiRadarDetection(
                                 ) {
                                     Text("BSSID : ${network.bssid}", color = Color.LightGray)
                                     Text("Capabilities : ${network.capabilities}", color = Color.LightGray)
-                                    Text("Channel : ${network.channel}", color = Color.LightGray)
                                     Text("Frequency : ${network.frequency} MHz", color = Color.LightGray)
 
                                     val bootTime = System.currentTimeMillis() - SystemClock.elapsedRealtime()
