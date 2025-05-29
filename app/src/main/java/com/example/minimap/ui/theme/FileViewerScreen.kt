@@ -2,6 +2,7 @@ package com.example.minimap.ui.theme
 
 
 import android.util.Log
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -35,14 +37,18 @@ import com.example.minimap.model.Screen
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.mutableIntStateOf
 import com.example.minimap.model.WifiNetworkInfo
+import com.example.minimap.model.getColor
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 @Composable
 fun FileViewerScreen(navController: NavController) {
     val context = LocalContext.current
-    val tabs = listOf("WiFi Detection", "Bluetooth Scan")
+    val tabs = listOf("WiFi Detection", "Observed Wifi")
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var showDialog by remember { mutableStateOf(false) }
     var jsonContent by remember { mutableStateOf("") }
@@ -56,6 +62,13 @@ fun FileViewerScreen(navController: NavController) {
             }?.toList() ?: emptyList()
         )
     }
+
+
+    val wifiNetworks by remember {
+        mutableStateOf(readWifiNetworksFromCsv(context, "wifis_dataset.csv"))
+    }
+
+
 
     if (showDialog) {
         androidx.compose.material3.AlertDialog(
@@ -175,23 +188,30 @@ fun FileViewerScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            items(jsonFiles) { file ->
-                FileItem(
-                    fileName = file.name,
-                    onClick = {
-                        try {
-                            val content = file.readText()
-                            jsonContent = content
-                            showDialog = true
-                        } catch (e: Exception) {
-                            Log.e("FileViewer", "Error reading file: ${e.message}")
+            if(selectedTabIndex == 0){
+                items(jsonFiles) { file ->
+                    FileItem(
+                        fileName = file.name,
+                        onClick = {
+                            try {
+                                val content = file.readText()
+                                jsonContent = content
+                                showDialog = true
+                            } catch (e: Exception) {
+                                Log.e("FileViewer", "Error reading file: ${e.message}")
+                            }
+                        },
+                        onDelete = {
+                            fileToDelete = file
+                            showDeleteDialog = true
                         }
-                    },
-                    onDelete = {
-                        fileToDelete = file
-                        showDeleteDialog = true
-                    }
-                )
+                    )
+                }
+            } else {
+                Log.d("DEBUG", "Wifi networks loaded: ${wifiNetworks.size}")
+                items(wifiNetworks) { wifi ->
+                    WifiItem(wifi)
+                }
             }
         }
     }
@@ -224,5 +244,49 @@ fun FileItem(fileName: String, onClick: () -> Unit, onDelete: () -> Unit) {
                 .clickable { onDelete() }
                 .padding(start = 12.dp)
         )
+    }
+}
+
+
+
+
+@Composable
+fun WifiItem(wifi: WifiNetworkInfo) {
+
+    var color = getColor(wifi.capabilities)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .background(Color(0xFF1F1F1F), RoundedCornerShape(8.dp))
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+
+        Row (
+            modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Canvas(
+                modifier = Modifier
+                    .size(12.dp)
+                    .padding(end = 8.dp)
+            ){
+                drawCircle(color = color)
+            }
+
+            Text(text = "SSID: ${wifi.ssid}", color = Color.White, fontSize = 14.sp)
+        }
+
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val dateString = dateFormat.format(Date(wifi.timestamp))
+
+        Text(text = "BSSID: ${wifi.bssid}", color = Color.Gray, fontSize = 12.sp)
+        Text(text = "RSSI: ${wifi.rssi} dBm", color = Color.Gray, fontSize = 12.sp)
+        Text(text = "Frequency: ${wifi.frequency} MHz", color = Color.LightGray, fontSize = 12.sp)
+        Text(text = "Capabilities: ${wifi.capabilities}", color = Color.Gray, fontSize = 12.sp)
+        Text(text = "Timestamp: $dateString", color = Color.Gray, fontSize = 12.sp)
     }
 }

@@ -17,6 +17,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.minimap.model.WifiNetworkInfo
+import com.example.minimap.model.WifiSecurityLevel
+import com.example.minimap.model.getLabel
+import com.example.minimap.model.getSecurityLevel
 import kotlinx.coroutines.delay
 
 @SuppressLint("MissingPermission", "ServiceCast")
@@ -45,28 +48,44 @@ fun WifiScanScreen(context: Context, navController: NavController) {
                 val ssid = result.SSID
                 val rssi = result.level
                 val bssid = result.BSSID
-                val capa = result.capabilities
+                val capabilities = result.capabilities
                 val channel = result.channelWidth
                 val frequency = result.frequency
+                val centerFreq0 = result.centerFreq0
+                val centerFreq1 = result.centerFreq1
+                val timestamp = result.timestamp
+                val operatorFriendlyName = result.operatorFriendlyName
+                val venueName = result.venueName
+                val isPasspointNetwork = result.isPasspointNetwork
+                val is80211mcResponder = result.is80211mcResponder
+                val label = getSecurityLevel(capabilities)
 
                 if (ssid.isBlank()) continue // ignore empty ssid
 
                 val existing = uniqueNetworks[ssid]
                 if (existing == null) {
                     // no include -> add up
-                    uniqueNetworks[ssid] = WifiNetworkInfo(ssid, rssi, capa, bssid, channel, frequency)
+                    uniqueNetworks[ssid] = WifiNetworkInfo(
+                        ssid = ssid, bssid = bssid, rssi = rssi, frequency = frequency, capabilities = capabilities, timestamp = timestamp, label = label
+                    )
                 } else {
                     // already available → compare rssi
                     val diff = kotlin.math.abs(existing.rssi - rssi)
                     if (diff > 5) {
                         // Significant difference → keep the highest (close to 0)
                         if (rssi > existing.rssi) {
-                            uniqueNetworks[ssid] = WifiNetworkInfo(ssid, rssi, capa, bssid, channel, frequency)
+                            uniqueNetworks[ssid] = WifiNetworkInfo(
+                                ssid = ssid, bssid = bssid, rssi = rssi, frequency = frequency, capabilities = capabilities, timestamp = timestamp, label = label
+                            )
                         }
                     }
                     // else, ignored bc redundancies
                 }
             }
+
+
+            appendNewWifisToCsv(context, "wifis_dataset.csv", uniqueNetworks.values.toList())
+
 
 
             wifiNetworks.clear()
@@ -86,13 +105,7 @@ fun WifiScanScreen(context: Context, navController: NavController) {
 @Preview(showBackground = true, backgroundColor = 0xFF000000)
 fun WifiScanPreview() {
     val mockNetworks = listOf(
-        WifiNetworkInfo("INSA_WIFI", -0, "", "", 0, 0),
-        WifiNetworkInfo("INSA_WIFI", -3, "",  "", 0, 0),
-        WifiNetworkInfo("INSA_IFI", -10, "",  "", 0, 0),
-        WifiNetworkInfo("INSA_WII", -20, "",  "", 0, 0),
-        WifiNetworkInfo("INSA_WIFI", -50, "",  "", 0, 0),
-        WifiNetworkInfo("Freebox", -70, "",  "", 0, 0),
-        WifiNetworkInfo("Hidden Network", -90, "",  "", 0, 0)
+        WifiNetworkInfo("INSA_WIFI", "9", 9, 4, "4", 4),
     )
 
     var isRunning: Boolean = true

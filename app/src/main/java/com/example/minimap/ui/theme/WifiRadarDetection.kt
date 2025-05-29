@@ -1,5 +1,6 @@
 package com.example.minimap.ui.theme
 
+import android.os.SystemClock
 import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -44,12 +45,16 @@ import androidx.navigation.NavController
 import com.example.minimap.autowide
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiSecurityLevel
+import com.example.minimap.model.getColor
 import com.example.minimap.model.getSecurityLevel
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 @Composable
@@ -124,6 +129,7 @@ fun WifiRadarDetection(
             }
         )
     }
+
 
 
 
@@ -290,11 +296,7 @@ fun WifiRadarDetection(
                         val pos = Offset(x, y)
 
 
-                        val color = when (getSecurityLevel(network.capabilities)) {
-                            WifiSecurityLevel.SAFE -> Color.Green
-                            WifiSecurityLevel.MEDIUM -> Color.Yellow
-                            WifiSecurityLevel.DANGEROUS -> Color.Red
-                        }
+                        val color = getColor(network.capabilities)
 
                         // Pulse circle
                         if(isRunning) {
@@ -379,11 +381,7 @@ fun WifiRadarDetection(
                     ) {
                         items(networks) { network ->
 
-                            val color = when (getSecurityLevel(network.capabilities)) {
-                                WifiSecurityLevel.SAFE -> Color.Green
-                                WifiSecurityLevel.MEDIUM -> Color.Yellow
-                                WifiSecurityLevel.DANGEROUS -> Color.Red
-                            }
+                            var color = getColor(network.capabilities)
 
                             Row(
                                 modifier = Modifier
@@ -422,6 +420,15 @@ fun WifiRadarDetection(
                                     Text("Capabilities : ${network.capabilities}", color = Color.LightGray)
                                     Text("Channel : ${network.channel}", color = Color.LightGray)
                                     Text("Frequency : ${network.frequency} MHz", color = Color.LightGray)
+
+                                    val bootTime = System.currentTimeMillis() - SystemClock.elapsedRealtime()
+                                    val scanTimeMillis = bootTime + (network.timestamp / 1000L)
+                                    val date = Date(scanTimeMillis)
+                                    val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                                    val readableDate = format.format(date)
+
+                                    Text("Timestamp : $readableDate", color = Color.LightGray)
+                                    Text("Security Level : ${network.label}", color = Color.LightGray)
                                 }
                             }
                         }
@@ -459,10 +466,3 @@ fun ExportButton(onClick: () -> Unit) {
             .clickable { onClick() }
     )
 }
-
-//fun exportNetworksToJson(networks: List<WifiNetworkInfo>) {
-//    val jsonData = Json { prettyPrint = true }.encodeToString(networks)
-//    Log.d("Export", jsonData)
-//
-//    // TODO: Save in local file
-//}
