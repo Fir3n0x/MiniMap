@@ -71,8 +71,6 @@ fun appendNewWifisToCsv(context: Context, fileName: String, newNetworks: List<Wi
 
     file.appendText("") // create if doesn't exist
 
-    //val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-    //val currentTime = sdf.format(Date())
     val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
     val currentTime = System.currentTimeMillis()
     val formattedTime = sdf.format(Date(currentTime))

@@ -81,8 +81,6 @@ fun WifiRadarDetection(
     var selectedSsid by remember { mutableStateOf<String?>(null) }
 
 
-//    var isRunning by remember { mutableStateOf(true) }
-
 
 
 

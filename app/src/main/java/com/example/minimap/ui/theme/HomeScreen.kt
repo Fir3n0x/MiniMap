@@ -57,45 +57,52 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
+
+
+
+object AppState {
+    var isFirstLaunch by mutableStateOf(true)
+}
 
 
 
 @Composable
 fun HomeScreen(navController: NavController) {
-
     var showTitle by remember { mutableStateOf(false) }
+    var showUserInfo by remember { mutableStateOf(false) }
     var showScanButton by remember { mutableStateOf(false) }
     var showBottomButtons by remember { mutableStateOf(false) }
-
     var showRobot by remember { mutableStateOf(false) }
     var robotWaving by remember { mutableStateOf(false) }
 
-
     LaunchedEffect(Unit) {
-        // Delay before displaying title
-        delay(100)
-        showTitle = true
-
-        // Delay before displaying SCAN button (after title)
-        delay(400)
-        showScanButton = true
-
-        // Delay before displaying bottom buttons
-        delay(400)
-        showBottomButtons = true
-
-
-        // Delay before showing robot (after other elements)
-        delay(400)
-        showRobot = true
-        robotWaving = true
-        delay(1000) // Wave duration
-        robotWaving = false
-        delay(500)
-        showRobot = false
+        if (AppState.isFirstLaunch) {
+            // First launch squential animation
+            showTitle = true
+            delay(900)
+            showUserInfo = true
+            delay(400)
+            showScanButton = true
+            delay(400)
+            showBottomButtons = true
+            delay(700)
+            showRobot = true
+            robotWaving = true
+            delay(1000)
+            robotWaving = false
+            delay(500)
+            showRobot = false
+            AppState.isFirstLaunch = false
+        } else {
+            // Next launch, direct display without animation
+            showTitle = true
+            showUserInfo = true
+            showScanButton = true
+            showBottomButtons = true
+        }
     }
-
 
     Box(
         modifier = Modifier
@@ -103,13 +110,11 @@ fun HomeScreen(navController: NavController) {
             .background(Color.Black),
         contentAlignment = Alignment.TopCenter
     ) {
-
         // Depth effect with gradient circles
         Canvas(modifier = Modifier.fillMaxSize()) {
             val center = Offset(size.width/2, size.height/2)
             val maxRadius = size.maxDimension
 
-            // Create concentric circles for depth effect
             for (i in 1..5) {
                 val radius = maxRadius * (i/5f)
                 drawCircle(
@@ -124,16 +129,27 @@ fun HomeScreen(navController: NavController) {
         // Title at the top
         AnimatedVisibility(
             visible = showTitle,
-            enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
-            exit = fadeOut()
+            enter = if (AppState.isFirstLaunch) fadeIn() + expandVertically() else fadeIn(animationSpec = tween(0)),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter)
         ) {
-            TerminalTitle()
+            TerminalTitle(animate = AppState.isFirstLaunch)
+        }
+
+        // User info with WiFi circles
+        AnimatedVisibility(
+            visible = showUserInfo,
+            enter = if (AppState.isFirstLaunch) fadeIn() + expandVertically() else fadeIn(animationSpec = tween(0)),
+            exit = fadeOut(),
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            UserInfoWithWifiIndicator()
         }
 
         // SCAN button with animation
         AnimatedVisibility(
             visible = showScanButton,
-            enter = fadeIn() + expandVertically(),
+            enter = if (AppState.isFirstLaunch) fadeIn() + expandVertically() else fadeIn(animationSpec = tween(0)),
             modifier = Modifier.fillMaxSize(),
             exit = fadeOut()
         ) {
@@ -144,18 +160,17 @@ fun HomeScreen(navController: NavController) {
 
         AnimatedVisibility(
             visible = showRobot,
-            enter = fadeIn() + expandVertically(expandFrom = Alignment.Bottom),
+            enter = if (AppState.isFirstLaunch) fadeIn() + expandVertically(expandFrom = Alignment.Bottom) else fadeIn(animationSpec = tween(0)),
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             RobotAnimation(isWaving = robotWaving)
         }
 
-
         // Bottom button with animation
         AnimatedVisibility(
             visible = showBottomButtons,
-            enter = fadeIn() + expandVertically(expandFrom = Alignment.Bottom),
+            enter = if (AppState.isFirstLaunch) fadeIn() + expandVertically(expandFrom = Alignment.Bottom) else fadeIn(animationSpec = tween(0)),
             modifier = Modifier.align(Alignment.BottomCenter),
             exit = fadeOut()
         ) {
@@ -227,60 +242,60 @@ private fun ScanButton(navController: NavController) {
 
 
 @Composable
-private fun TerminalTitle() {
-    var showCursor by remember { mutableStateOf(true) }
-    var textToDisplay by remember { mutableStateOf("") }
+private fun TerminalTitle(animate: Boolean = true) {
+    var showCursor by remember { mutableStateOf(false) }
+    var textToDisplay by remember { mutableStateOf(if (animate) "" else "MINIMAP") }
+    var showPrefix by remember { mutableStateOf(animate) }
     val fullText = "MINIMAP"
     val prefix = "$> "
-    val textWidth = remember { mutableStateOf(0.dp) }
+    var animationComplete by remember { mutableStateOf(!animate) }
 
-    // Written animation + cursor
-    LaunchedEffect(Unit) {
-        fullText.forEachIndexed { index, _ ->
-            textToDisplay = fullText.take(index + 1)
-            delay(150)
-        }
-        while (true) {
+    LaunchedEffect(animate) {
+        if (animate) {
+            showCursor = true
+            fullText.forEachIndexed { index, _ ->
+                textToDisplay = fullText.take(index + 1)
+                delay(150)
+            }
+            animationComplete = true
             delay(500)
-            showCursor = !showCursor
+            showCursor = false
+            showPrefix = false
         }
     }
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 32.dp),
-        contentAlignment = Alignment.Center
+            .padding(top = 150.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Measure length full text
-        Text(
-            text = prefix + fullText,
-            color = Color.Transparent,
-            fontFamily = autowide,
-            fontSize = 48.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.onGloballyPositioned {
-                textWidth.value = it.size.width.dp
-            }
-        )
-
-        // Container with fixed length
-        Box(
-            modifier = Modifier.width(textWidth.value)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
-            ) {
+            if (showPrefix) {
                 Text(
-                    text = prefix + textToDisplay,
+                    text = prefix,
                     color = Color(0xFF00FF00),
                     fontFamily = autowide,
                     fontSize = 48.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.shadow(4.dp)
                 )
+            }
 
+            Text(
+                text = textToDisplay,
+                color = Color(0xFF00FF00),
+                fontFamily = autowide,
+                fontSize = 48.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.shadow(4.dp),
+                textAlign = TextAlign.Center
+            )
+
+            if (showCursor && !animationComplete) {
                 AnimatedVisibility(
                     visible = showCursor,
                     enter = fadeIn(),
@@ -297,6 +312,77 @@ private fun TerminalTitle() {
     }
 }
 
+
+@Composable
+fun UserInfoWithWifiIndicator() {
+
+    val context = LocalContext.current
+
+    val wifiNetworks by remember {
+        mutableStateOf(readWifiNetworksFromCsv(context, "wifis_dataset.csv"))
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Text "User's analysis:"
+        Text(
+            text = "User's analysis:",
+            color = Color.White,
+            fontFamily = autowide,
+            fontSize = 16.sp,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        // Wifi visual indicator
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(bottom = 4.dp)
+        ) {
+            // Concentric circles
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(24.dp)
+            ) {
+                // small inner circle
+                Canvas(modifier = Modifier.size(8.dp)) {
+                    drawCircle(
+                        color = Color.White,
+                        radius = size.minDimension / 2
+                    )
+                }
+
+                // medium circle
+                Canvas(modifier = Modifier.size(16.dp)) {
+                    drawCircle(
+                        color = Color.White,
+                        radius = size.minDimension / 2,
+                        style = Stroke(width = 1.dp.toPx())
+                    )
+                }
+
+                // big outer circle
+                Canvas(modifier = Modifier.size(24.dp)) {
+                    drawCircle(
+                        color = Color.White,
+                        radius = size.minDimension / 2,
+                        style = Stroke(width = 1.dp.toPx())
+                    )
+                }
+            }
+
+            // Text "130 observed wifi"
+            Text(
+                text = "${wifiNetworks.size} observed wifi",
+                color = Color.Green,
+                fontFamily = autowide,
+                fontSize = 14.sp
+            )
+        }
+    }
+}
 
 @Composable
 fun RobotAnimation(isWaving: Boolean) {
