@@ -48,7 +48,7 @@ import java.util.Locale
 @Composable
 fun FileViewerScreen(navController: NavController) {
     val context = LocalContext.current
-    val tabs = listOf("WiFi Detection", "Observed Wifi")
+    val tabs = listOf("Saved Wifi", "Observed Wifi")
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var showDialog by remember { mutableStateOf(false) }
     var jsonContent by remember { mutableStateOf("") }
@@ -183,34 +183,64 @@ fun FileViewerScreen(navController: NavController) {
         }
 
         // Scrollable list .json
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
             if(selectedTabIndex == 0){
-                items(jsonFiles) { file ->
-                    FileItem(
-                        fileName = file.name,
-                        onClick = {
-                            try {
-                                val content = file.readText()
-                                jsonContent = content
-                                showDialog = true
-                            } catch (e: Exception) {
-                                Log.e("FileViewer", "Error reading file: ${e.message}")
+
+                Text(
+                    text = "$> Total ${jsonFiles.size}",
+                    fontFamily = autowide,
+                    color = Color.Green,
+                )
+
+                LazyColumn (
+                    modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                )
+                {
+
+                    items(jsonFiles) { file ->
+                        FileItem(
+                            fileName = file.name,
+                            onClick = {
+                                try {
+                                    val content = file.readText()
+                                    jsonContent = content
+                                    showDialog = true
+                                } catch (e: Exception) {
+                                    Log.e("FileViewer", "Error reading file: ${e.message}")
+                                }
+                            },
+                            onDelete = {
+                                fileToDelete = file
+                                showDeleteDialog = true
                             }
-                        },
-                        onDelete = {
-                            fileToDelete = file
-                            showDeleteDialog = true
-                        }
-                    )
+                        )
+                    }
                 }
+
             } else {
-                Log.d("DEBUG", "Wifi networks loaded: ${wifiNetworks.size}")
-                items(wifiNetworks) { wifi ->
-                    WifiItem(wifi)
+
+                Text(
+                    text = "$> Total ${wifiNetworks.size}",
+                    fontFamily = autowide,
+                    color = Color.Green,
+                )
+
+                LazyColumn (
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                )
+                {
+
+                    items(wifiNetworks) { wifi ->
+                        WifiItem(wifi)
+                    }
                 }
             }
         }
