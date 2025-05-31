@@ -35,9 +35,12 @@ import com.example.minimap.TerminalButton
 import com.example.minimap.autowide
 import com.example.minimap.model.Screen
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.mutableIntStateOf
 import com.example.minimap.model.WifiNetworkInfo
+import com.example.minimap.model.WifiSecurityLevel
 import com.example.minimap.model.getColor
+import com.example.minimap.model.getSecurityLevel
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.text.SimpleDateFormat
@@ -54,6 +57,12 @@ fun FileViewerScreen(navController: NavController) {
     var jsonContent by remember { mutableStateOf("") }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var fileToDelete by remember { mutableStateOf<File?>(null) }
+
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Filters in  "Observed Wifi"
+    val securityFilters = listOf("SAFE", "MEDIUM", "DANGEROUS")
+    var selectedFilter by remember { mutableStateOf<String?>(null) }
 
     var jsonFiles by remember {
         mutableStateOf(
@@ -190,8 +199,19 @@ fun FileViewerScreen(navController: NavController) {
         ) {
             if(selectedTabIndex == 0){
 
+                val filteredFiles = jsonFiles.filter { it.name.contains(searchQuery, ignoreCase = true) }
+
+                TextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Search JSON files") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                )
+
                 Text(
-                    text = "$> Total ${jsonFiles.size}",
+                    text = "$> Total ${filteredFiles.size}",
                     fontFamily = autowide,
                     color = Color.Green,
                 )
@@ -203,7 +223,7 @@ fun FileViewerScreen(navController: NavController) {
                 )
                 {
 
-                    items(jsonFiles) { file ->
+                    items(filteredFiles) { file ->
                         FileItem(
                             fileName = file.name,
                             onClick = {
@@ -225,8 +245,57 @@ fun FileViewerScreen(navController: NavController) {
 
             } else {
 
+
+
+
+                TextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Search Wifi") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                )
+
+                // Security Filter
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    securityFilters.forEach { filter ->
+                        val isSelected = selectedFilter == filter
+                        Box(
+                            modifier = Modifier
+                                .background(if (isSelected) Color.Green else Color.DarkGray, RoundedCornerShape(8.dp))
+                                .clickable {
+                                    selectedFilter = if (isSelected) null else filter
+                                }
+                                .padding(8.dp)
+                        ) {
+                            Text(
+                                text = filter,
+                                color = Color.White,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+
+                val filteredWifi = wifiNetworks.filter { wifi ->
+                    val securityLevel = getSecurityLevel(wifi.capabilities)
+                    val matchesSearch = wifi.ssid.contains(searchQuery, ignoreCase = true)
+                    val matchesFilter = when (selectedFilter) {
+                        null -> true
+                        "SAFE" -> securityLevel == WifiSecurityLevel.SAFE
+                        "MEDIUM" -> securityLevel == WifiSecurityLevel.MEDIUM
+                        "DANGEROUS" -> securityLevel == WifiSecurityLevel.DANGEROUS
+                        else -> false
+                    }
+                    matchesSearch && matchesFilter
+                }
+
                 Text(
-                    text = "$> Total ${wifiNetworks.size}",
+                    text = "$> Total ${filteredWifi.size}",
                     fontFamily = autowide,
                     color = Color.Green,
                 )
@@ -238,7 +307,7 @@ fun FileViewerScreen(navController: NavController) {
                 )
                 {
 
-                    items(wifiNetworks) { wifi ->
+                    items(filteredWifi) { wifi ->
                         WifiItem(wifi)
                     }
                 }
