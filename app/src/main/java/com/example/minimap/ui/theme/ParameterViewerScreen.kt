@@ -17,12 +17,21 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
 import com.example.minimap.autowide
+import com.example.minimap.data.preferences.SettingsKeys
+import com.example.minimap.data.preferences.SettingsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 // 1) Enum for tabs
 private enum class ParamTab(val label: String, val icon: @Composable () -> Unit) {
@@ -101,15 +110,41 @@ fun ParameterViewerScreen(navController: NavController) {
     }
 
 
+    // Instancier le SettingsRepository une seule fois
+    val context = LocalContext.current
+    val settingsRepo = remember { SettingsRepository(context) }
 
-    // Global content
+    // 3) On lit en Flow les préférences persistées pour AutoScan et Notifications
+    val autoScanEnabledState by settingsRepo.autoScanEnabledFlow.collectAsState(initial = false)
+    val notificationEnabledState by settingsRepo.notificationEnabledFlow.collectAsState(initial = false)
+
+    // Pour planifier ou annuler le WorkManager
+    val workManager = androidx.work.WorkManager.getInstance(context)
+
+
+
+    // 6) États locaux pour le reste des options qui ne sont pas persistées (maps clé → Boolean)
+    //    Ici, on persiste uniquement « saveResults », « silentMode », « showVersion », « enableLogs » en mémoire.
+    val localOptionStates = remember {
+        mutableStateMapOf<String, Boolean>().apply {
+            // Initialiser toutes les clés non gérées par DataStore à false
+            (scanOptions + notificationOptions + aboutOptions).forEach { opt ->
+                if (opt.key != SettingsKeys.AUTO_SCAN_ENABLED.name &&
+                    opt.key != SettingsKeys.NOTIFICATION_ENABLED.name
+                ) {
+                    this[opt.key] = false
+                }
+            }
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
     ) {
         // ────────────────────────────────────────────────────────
-        // 1) Left column : vertical tabs
+        // A) Colonne de gauche : bouton « < » + onglets verticaux
         // ────────────────────────────────────────────────────────
         Column(
             modifier = Modifier
@@ -119,13 +154,12 @@ fun ParameterViewerScreen(navController: NavController) {
                 .padding(top = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            // -- Button "<" at the top to get back "HomeScreen" --
+            // Bouton de retour vers Home
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { navController.navigate("home") }
-                    .padding(vertical = 12.dp),
+                    .padding(vertical = 12.dp)
             ) {
                 Text(
                     text = "<",
@@ -138,19 +172,15 @@ fun ParameterViewerScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // For each tab of ParamTab, we retrieve value from values()
-            ParamTab.entries.forEach { tab ->
-                val isSelected = (tab == selectedTab)
-
-                // Each tab is a clickable box
+            // Boucle sur les onglets (ParamTab.values()), format visuel et sélection
+            ParamTab.values().forEach { tab ->
+                val isSelected = tab == selectedTab
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                         .background(
-                            // Lighter color is selected
-                            if (isSelected) Color(0xFF333333)
-                            else Color.Transparent,
+                            if (isSelected) Color(0xFF333333) else Color.Transparent,
                             shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
                         )
                         .clickable { selectedTab = tab }
@@ -161,7 +191,6 @@ fun ParameterViewerScreen(navController: NavController) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        // Icon tab (green if selected, else gray)
                         CompositionLocalProvider(
                             LocalContentColor provides if (isSelected) Color.Green else Color.Gray
                         ) {
@@ -182,7 +211,7 @@ fun ParameterViewerScreen(navController: NavController) {
         }
 
         // ────────────────────────────────────────────────────────
-        // 2) Right column : content (options) according to current tab
+        // B) Colonne de droite : contenu dynamique selon l’onglet sélectionné
         // ────────────────────────────────────────────────────────
         Box(
             modifier = Modifier
@@ -191,13 +220,260 @@ fun ParameterViewerScreen(navController: NavController) {
         ) {
             when (selectedTab) {
                 ParamTab.Scan -> {
-                    TabContent(options = scanOptions, checkboxStates = checkboxStates)
+                    // ==== Onglet “Scan” ====
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Text(
+                            text = "Paramètres Scan",
+                            color = Color.Green,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        // 1) Auto Scan (DataStore + WorkManager)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Checkbox(
+                                checked = autoScanEnabledState,
+                                onCheckedChange = { checked ->
+                                    // Met à jour DataStore
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        settingsRepo.setAutoScanEnabled(checked)
+                                    }
+                                    // Planifie ou annule le Work
+                                    if (checked) {
+                                        val request =
+                                            PeriodicWorkRequestBuilder<WifiScanWorker>(
+                                                /* repeatInterval= */ 20,
+                                                TimeUnit.MINUTES
+                                            )
+                                                .setInitialDelay(0, TimeUnit.MINUTES)
+                                                .addTag("wifi_auto_scan")
+                                                .build()
+                                        workManager.enqueueUniquePeriodicWork(
+                                            "WifiAutoScanWork",
+                                            ExistingPeriodicWorkPolicy.REPLACE,
+                                            request
+                                        )
+                                    } else {
+                                        workManager.cancelAllWorkByTag("wifi_auto_scan")
+                                    }
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = scanOptions[0].title,
+                                    color = Color.White,
+                                    fontSize = 16.sp
+                                )
+                                Text(
+                                    text = scanOptions[0].description,
+                                    color = Color.LightGray,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+
+                        Divider(color = Color.DarkGray, thickness = 1.dp)
+
+                        // 2) Sauvegarder les résultats (état local)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Checkbox(
+                                checked = localOptionStates[scanOptions[1].key] == true,
+                                onCheckedChange = { checked ->
+                                    localOptionStates[scanOptions[1].key] = checked
+                                },
+                                colors = CheckboxDefaults.colors(
+                                    checkmarkColor = Color.Black,
+                                    uncheckedColor = Color.Gray,
+                                    checkedColor = Color.Green
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = scanOptions[1].title,
+                                    color = Color.White,
+                                    fontSize = 16.sp
+                                )
+                                Text(
+                                    text = scanOptions[1].description,
+                                    color = Color.LightGray,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
                 }
+
                 ParamTab.Notification -> {
-                    TabContent(options = notificationOptions, checkboxStates = checkboxStates)
+                    // ==== Onglet “Notification” ====
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Text(
+                            text = "Paramètres Notification",
+                            color = Color.Green,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        // 1) Notifications Push (DataStore)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Checkbox(
+                                checked = notificationEnabledState,
+                                onCheckedChange = { checked ->
+                                    // Met à jour DataStore
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        settingsRepo.setNotificationEnabled(checked)
+                                    }
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = notificationOptions[0].title,
+                                    color = Color.White,
+                                    fontSize = 16.sp
+                                )
+                                Text(
+                                    text = notificationOptions[0].description,
+                                    color = Color.LightGray,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+
+                        Divider(color = Color.DarkGray, thickness = 1.dp)
+
+                        // 2) Mode silencieux (état local)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Checkbox(
+                                checked = localOptionStates[notificationOptions[1].key] == true,
+                                onCheckedChange = { checked ->
+                                    localOptionStates[notificationOptions[1].key] = checked
+                                },
+                                colors = CheckboxDefaults.colors(
+                                    checkmarkColor = Color.Black,
+                                    uncheckedColor = Color.Gray,
+                                    checkedColor = Color.Green
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = notificationOptions[1].title,
+                                    color = Color.White,
+                                    fontSize = 16.sp
+                                )
+                                Text(
+                                    text = notificationOptions[1].description,
+                                    color = Color.LightGray,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
                 }
+
                 ParamTab.About -> {
-                    TabContent(options = aboutOptions, checkboxStates = checkboxStates)
+                    // ==== Onglet “About” ====
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Text(
+                            text = "À propos",
+                            color = Color.Green,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        // 1) Afficher la version (état local)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Checkbox(
+                                checked = localOptionStates[aboutOptions[0].key] == true,
+                                onCheckedChange = { checked ->
+                                    localOptionStates[aboutOptions[0].key] = checked
+                                },
+                                colors = CheckboxDefaults.colors(
+                                    checkmarkColor = Color.Black,
+                                    uncheckedColor = Color.Gray,
+                                    checkedColor = Color.Green
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = aboutOptions[0].title,
+                                    color = Color.White,
+                                    fontSize = 16.sp
+                                )
+                                Text(
+                                    text = aboutOptions[0].description,
+                                    color = Color.LightGray,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+
+                        Divider(color = Color.DarkGray, thickness = 1.dp)
+
+                        // 2) Activer les logs (état local)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Checkbox(
+                                checked = localOptionStates[aboutOptions[1].key] == true,
+                                onCheckedChange = { checked ->
+                                    localOptionStates[aboutOptions[1].key] = checked
+                                },
+                                colors = CheckboxDefaults.colors(
+                                    checkmarkColor = Color.Black,
+                                    uncheckedColor = Color.Gray,
+                                    checkedColor = Color.Green
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = aboutOptions[1].title,
+                                    color = Color.White,
+                                    fontSize = 16.sp
+                                )
+                                Text(
+                                    text = aboutOptions[1].description,
+                                    color = Color.LightGray,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
