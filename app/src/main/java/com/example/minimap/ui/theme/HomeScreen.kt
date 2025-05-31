@@ -10,6 +10,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,6 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -180,8 +185,8 @@ fun HomeScreen(navController: NavController) {
                     .padding(bottom = 32.dp, start = 32.dp, end = 32.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton("ooo") { navController.navigate("parameterViewer") }
-                IconButton("|||\\") { navController.navigate("fileViewer") }
+                IconButton("ooo", { navController.navigate("parameterViewer") })
+                IconButton("|||\\", { navController.navigate("fileViewer") })
             }
         }
     }
@@ -536,10 +541,10 @@ fun RobotAnimation(isWaving: Boolean) {
 
 
 @Composable
-private fun IconButton(icon: String, onClick: () -> Unit) {
+private fun IconButton(icon: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
+        modifier = modifier
             .size(60.dp)
             .background(
                 color = Color(0xFF232222),
