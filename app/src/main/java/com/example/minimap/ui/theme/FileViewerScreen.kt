@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,8 +56,12 @@ fun FileViewerScreen(navController: NavController) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var showDialog by remember { mutableStateOf(false) }
     var jsonContent by remember { mutableStateOf("") }
+
     var showDeleteDialog by remember { mutableStateOf(false) }
     var fileToDelete by remember { mutableStateOf<File?>(null) }
+
+    var showWifiDeleteDialog by remember { mutableStateOf(false) }
+    var wifiToDelete by remember { mutableStateOf<WifiNetworkInfo?>(null) }
 
     var searchQuery by remember { mutableStateOf("") }
 
@@ -73,8 +78,8 @@ fun FileViewerScreen(navController: NavController) {
     }
 
 
-    val wifiNetworks by remember {
-        mutableStateOf(readWifiNetworksFromCsv(context, "wifis_dataset.csv"))
+    var wifiNetworks by remember {
+        mutableStateOf(readWifiNetworksFromCsv(context, "wifis_dataset.csv").toMutableList())
     }
 
 
@@ -144,6 +149,63 @@ fun FileViewerScreen(navController: NavController) {
             text = {
                 Text(
                     text = "Are you sure you want to delete this file?",
+                    color = Color.White,
+                    fontSize = 14.sp
+                )
+            },
+            containerColor = Color.DarkGray
+        )
+    }
+
+
+
+    if (showWifiDeleteDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showWifiDeleteDialog = false },
+            confirmButton = {
+                Text(
+                    text = "Yes",
+                    modifier = Modifier
+                        .clickable {
+                            wifiToDelete?.let { wifi ->
+                                val updatedList = wifiNetworks.toMutableList().also { it.remove(wifi) }
+                                wifiNetworks = updatedList
+
+                                // Update .csv file
+                                val csvFile = File(context.filesDir, "wifis_dataset.csv")
+                                if (csvFile.exists()) {
+                                    csvFile.writeText("") // empty the file
+                                    updatedList.forEach {
+                                        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                                        val currentTime = it.timestamp
+                                        val formattedTime = sdf.format(Date(currentTime))
+                                        val line = listOf(it.ssid, it.bssid, it.rssi.toString(), it.frequency.toString(), it.capabilities, formattedTime).joinToString(";")
+
+                                        csvFile.appendText("$line\n")
+                                    }
+                                }
+                            }
+                            showWifiDeleteDialog = false
+                        }
+                        .padding(8.dp),
+                    color = Color.Red
+                )
+            },
+            dismissButton = {
+                Text(
+                    text = "No",
+                    modifier = Modifier
+                        .clickable { showWifiDeleteDialog = false }
+                        .padding(8.dp),
+                    color = Color.Green
+                )
+            },
+            title = {
+                Text("Confirm Deletion", color = Color.White, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to delete this Wi-Fi entry?",
                     color = Color.White,
                     fontSize = 14.sp
                 )
@@ -308,7 +370,10 @@ fun FileViewerScreen(navController: NavController) {
                 {
 
                     items(filteredWifi) { wifi ->
-                        WifiItem(wifi)
+                        WifiItem(wifi, onDelete = {
+                            wifiToDelete = wifi
+                            showWifiDeleteDialog = true
+                        })
                     }
                 }
             }
@@ -350,9 +415,11 @@ fun FileItem(fileName: String, onClick: () -> Unit, onDelete: () -> Unit) {
 
 
 @Composable
-fun WifiItem(wifi: WifiNetworkInfo) {
+fun WifiItem(wifi: WifiNetworkInfo, onDelete: () -> Unit) {
 
     var color = getColor(wifi.capabilities)
+
+
 
     Column(
         modifier = Modifier
@@ -362,21 +429,34 @@ fun WifiItem(wifi: WifiNetworkInfo) {
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
 
-        Row (
+        Row(
             modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Canvas(
                 modifier = Modifier
                     .size(12.dp)
                     .padding(end = 8.dp)
-            ){
+            ) {
                 drawCircle(color = color)
             }
 
             Text(text = "SSID: ${wifi.ssid}", color = Color.White, fontSize = 14.sp)
+
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Deleting button
+            Text(
+                text = "|x|",
+                color = Color.Red,
+                fontSize = 18.sp,
+                modifier = Modifier
+                    .clickable { onDelete() }
+                    .padding(start = 12.dp)
+            )
         }
 
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
@@ -384,8 +464,15 @@ fun WifiItem(wifi: WifiNetworkInfo) {
 
         Text(text = "BSSID: ${wifi.bssid}", color = Color.Gray, fontSize = 12.sp)
         Text(text = "RSSI: ${wifi.rssi} dBm", color = Color.Gray, fontSize = 12.sp)
-        Text(text = "Frequency: ${wifi.frequency} MHz", color = Color.LightGray, fontSize = 12.sp)
+        Text(
+            text = "Frequency: ${wifi.frequency} MHz",
+            color = Color.LightGray,
+            fontSize = 12.sp
+        )
         Text(text = "Capabilities: ${wifi.capabilities}", color = Color.Gray, fontSize = 12.sp)
         Text(text = "Timestamp: $dateString", color = Color.Gray, fontSize = 12.sp)
     }
+
+
+
 }
