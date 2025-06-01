@@ -36,6 +36,8 @@ import com.example.minimap.TerminalButton
 import com.example.minimap.autowide
 import com.example.minimap.model.Screen
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.mutableIntStateOf
 import com.example.minimap.model.WifiNetworkInfo
@@ -59,9 +61,11 @@ fun FileViewerScreen(navController: NavController) {
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     var fileToDelete by remember { mutableStateOf<File?>(null) }
+    var showDeleteAllJsonDialog by remember { mutableStateOf(false) }
 
     var showWifiDeleteDialog by remember { mutableStateOf(false) }
     var wifiToDelete by remember { mutableStateOf<WifiNetworkInfo?>(null) }
+    var showDeleteAllWifiDialog by remember { mutableStateOf(false) }
 
     var searchQuery by remember { mutableStateOf("") }
 
@@ -158,6 +162,48 @@ fun FileViewerScreen(navController: NavController) {
     }
 
 
+    if (showDeleteAllJsonDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllJsonDialog = false },
+            confirmButton = {
+                Text(
+                    text = "Yes",
+                    modifier = Modifier
+                        .clickable {
+                            // Remove all json files
+                            jsonFiles.forEach { it.delete() }
+                            jsonFiles = mutableListOf()
+
+                            showDeleteAllJsonDialog = false
+                        }
+                        .padding(8.dp),
+                    color = Color.Red
+                )
+            },
+            dismissButton = {
+                Text(
+                    text = "No",
+                    modifier = Modifier
+                        .clickable { showDeleteAllJsonDialog = false }
+                        .padding(8.dp),
+                    color = Color.Green
+                )
+            },
+            title = {
+                Text("Confirm Deletion", color = Color.White, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to delete ALL saved Wi-Fi files?",
+                    color = Color.White,
+                    fontSize = 14.sp
+                )
+            },
+            containerColor = Color.DarkGray
+        )
+    }
+
+
 
     if (showWifiDeleteDialog) {
         androidx.compose.material3.AlertDialog(
@@ -206,6 +252,54 @@ fun FileViewerScreen(navController: NavController) {
             text = {
                 Text(
                     text = "Are you sure you want to delete this Wi-Fi entry?",
+                    color = Color.White,
+                    fontSize = 14.sp
+                )
+            },
+            containerColor = Color.DarkGray
+        )
+    }
+
+
+
+    if (showDeleteAllWifiDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDeleteAllWifiDialog = false },
+            confirmButton = {
+                Text(
+                    text = "Yes",
+                    modifier = Modifier
+                        .clickable {
+                            // Delete all wifi
+                            wifiNetworks = mutableListOf()
+
+                            // empty csv file
+                            val csvFile = File(context.filesDir, "wifis_dataset.csv")
+                            if (csvFile.exists()) {
+                                csvFile.writeText("")
+                            }
+
+                            showDeleteAllWifiDialog = false
+                        }
+                        .padding(8.dp),
+                    color = Color.Red
+                )
+            },
+            dismissButton = {
+                Text(
+                    text = "No",
+                    modifier = Modifier
+                        .clickable { showDeleteAllWifiDialog = false }
+                        .padding(8.dp),
+                    color = Color.Green
+                )
+            },
+            title = {
+                Text("Confirm Deletion", color = Color.White, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to delete ALL observed Wi-Fi entries?",
                     color = Color.White,
                     fontSize = 14.sp
                 )
@@ -272,11 +366,27 @@ fun FileViewerScreen(navController: NavController) {
                         .padding(bottom = 8.dp)
                 )
 
-                Text(
-                    text = "$> Total ${filteredFiles.size}",
-                    fontFamily = autowide,
-                    color = Color.Green,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "$> Total ${filteredFiles.size}",
+                        fontFamily = autowide,
+                        color = Color.Green,
+                        modifier = Modifier.weight(1f)
+                    )
+                    androidx.compose.material3.Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Delete,
+                        contentDescription = "Delete All",
+                        tint = Color.Red,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                showDeleteAllJsonDialog = true
+                            }
+                    )
+                }
 
                 LazyColumn (
                     modifier = Modifier
@@ -356,11 +466,27 @@ fun FileViewerScreen(navController: NavController) {
                     matchesSearch && matchesFilter
                 }
 
-                Text(
-                    text = "$> Total ${filteredWifi.size}",
-                    fontFamily = autowide,
-                    color = Color.Green,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "$> Total ${filteredWifi.size}",
+                        fontFamily = autowide,
+                        color = Color.Green,
+                        modifier = Modifier.weight(1f)
+                    )
+                    androidx.compose.material3.Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Delete,
+                        contentDescription = "Delete All Wi-Fi",
+                        tint = Color.Red,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                showDeleteAllWifiDialog = true
+                            }
+                    )
+                }
 
                 LazyColumn (
                     modifier = Modifier
