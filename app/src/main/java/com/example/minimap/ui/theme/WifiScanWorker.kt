@@ -16,7 +16,6 @@ import com.example.minimap.data.preferences.SettingsKeys
 import com.example.minimap.data.preferences.SettingsRepository
 import com.example.minimap.data.preferences.settingsDataStore
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 class WifiScanWorker(
@@ -32,41 +31,41 @@ class WifiScanWorker(
 
     @SuppressLint("MissingPermission", "ServiceCast")
     override suspend fun doWork(): Result {
-        // 1) Charger la Repo de préférences
+        // 1) Load Preferences Repo
         val settingsRepo = SettingsRepository(context)
 
-        // 2) Vérifier si l'option « Auto Scan » est toujours activée
+        // 2) Check if option "Auto Scan" is still activated
         val autoScanEnabled = settingsRepo.context.settingsDataStore.data
             .map { prefs -> prefs[SettingsKeys.AUTO_SCAN_ENABLED] ?: false }
             .first()
 
         if (!autoScanEnabled) {
-            // Si on n'est plus en AutoScan, on arrête le Worker (résultat succès pour ne pas réessayer)
+            // If AutoScan is disabled, stop Worker (Result success to not retry)
             return Result.success()
         }
 
-        // 3) Lancer un scan Wi-Fi et récupérer les résultats
+        // 3) Launch Wifi scan and retrieve results
         return withContext(Dispatchers.IO) {
             try {
                 val wifiManager =
                     context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
-                // Nécessite que la permission ACCESS_FINE_LOCATION (ou COARSE) soit déjà accordée
+                // Need ACCESS_FINE_LOCATION permission
                 if (!wifiManager.isWifiEnabled) {
                     // Activer le Wi-Fi si besoin (ou retourner success si on ne veut pas forcer l'activation)
                     // wifiManager.isWifiEnabled = true // attention : cela peut demander une action utilisateur sous API>29
                 }
 
                 val success = wifiManager.startScan()
-                // Si le scan ne démarre pas, on renvoie success quand même
+                // If scan does not launch, still send success
                 if (!success) {
                     return@withContext Result.success()
                 }
 
-                // On récupère les résultats du dernier scan
+                // Retrieve results in final scan
                 val scanResults: List<ScanResult> = wifiManager.scanResults
 
-                // 4) Filtrer les réseaux non sécurisés
+                // 4) Filter non-safe networks
                 // Selon vos critères, « non sécurisé » = capabilités contiennent “[ESS]” sans “WPA”/“WPA2”/“WPA3”
                 val insecureNetworks = scanResults.filter { result ->
                     val caps = result.capabilities.uppercase()
@@ -86,21 +85,20 @@ class WifiScanWorker(
                 Result.success()
             } catch (e: Exception) {
                 e.printStackTrace()
-                // Échec ponctuel ; WorkManager réessaiera selon la politique de backoff
                 Result.retry()
             }
         }
     }
 
     /**
-     * Construit et envoie une notification sommaire pour signaler le(s) réseau(x) non sécurisé(s).
-     * Vous pouvez personnaliser le style ou le texte (par exemple lister les SSID).
+     * Builds and sends a summary notification to report the unsecured network(s).
+     * You can customize the style or text (for example, list SSIDs).
      */
     private fun sendNotification(countInsecure: Int) {
         val notifManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // 1) Créer le channel si nécessaire (Android 8+)
+        // 1) Create channel if necessary
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val existing = notifManager.getNotificationChannel(CHANNEL_ID)
             if (existing == null) {
@@ -115,15 +113,15 @@ class WifiScanWorker(
             }
         }
 
-        // 2) Construire la notification
+        // 2) Build notification
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_warning) // ou votre icône d’application
+            .setSmallIcon(android.R.drawable.stat_sys_warning)
             .setContentTitle("Réseau Wi-Fi non sécurisé détecté")
             .setContentText("$countInsecure réseau(s) en accès libre trouvé(s).")
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-        // 3) Afficher la notification
+        // 3) display notification
         notifManager.notify(NOTIF_ID, builder.build())
     }
 }

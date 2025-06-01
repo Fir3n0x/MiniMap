@@ -46,7 +46,6 @@ import com.example.minimap.autowide
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiSecurityLevel
 import com.example.minimap.model.getColor
-import com.example.minimap.model.getSecurityLevel
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -294,7 +293,7 @@ fun WifiRadarDetection(
                         val pos = Offset(x, y)
 
 
-                        val color = getColor(network.capabilities)
+                        val color = getColor(network.label)
 
                         // Pulse circle
                         if(isRunning) {
@@ -379,7 +378,7 @@ fun WifiRadarDetection(
                     ) {
                         items(networks) { network ->
 
-                            var color = getColor(network.capabilities)
+                            var color = getColor(network.label)
 
                             Row(
                                 modifier = Modifier

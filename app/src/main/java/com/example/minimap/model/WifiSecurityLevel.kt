@@ -1,29 +1,24 @@
 package com.example.minimap.model
 
+import android.content.Context
 import androidx.compose.ui.graphics.Color
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
 
 enum class WifiSecurityLevel {
-    SAFE, MEDIUM, DANGEROUS
-}
+    SAFE, MEDIUM, DANGEROUS;
 
-fun getSecurityLevel(capabilities: String): WifiSecurityLevel {
-    return when {
-        capabilities.contains("WPA3") || capabilities.contains("WPA2") -> WifiSecurityLevel.SAFE
-        capabilities.contains("WEP") -> WifiSecurityLevel.MEDIUM
-        capabilities.isBlank() || !capabilities.contains("WPA") -> WifiSecurityLevel.DANGEROUS
-        else -> WifiSecurityLevel.MEDIUM
+    fun getColor(): Color {
+        return when (this) {
+            SAFE -> Color.Green
+            MEDIUM -> Color.Yellow
+            DANGEROUS -> Color.Red
+        }
     }
 }
 
-fun getColor(capabilities: String) : Color {
-    val color =  when (getSecurityLevel(capabilities)){
-        WifiSecurityLevel.SAFE -> Color.Green
-        WifiSecurityLevel.MEDIUM -> Color.Yellow
-        WifiSecurityLevel.DANGEROUS -> Color.Red
-    }
-    return color
-}
 
-fun getLabel() : WifiSecurityLevel {
-    return WifiSecurityLevel.DANGEROUS
+
+fun getColor(securityLevel: WifiSecurityLevel): Color {
+    return securityLevel.getColor()
 }

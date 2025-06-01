@@ -43,8 +43,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiSecurityLevel
 import com.example.minimap.model.getColor
-import com.example.minimap.model.getSecurityLevel
-import kotlinx.serialization.json.Json
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -454,7 +452,7 @@ fun FileViewerScreen(navController: NavController) {
                 }
 
                 val filteredWifi = wifiNetworks.filter { wifi ->
-                    val securityLevel = getSecurityLevel(wifi.capabilities)
+                    val securityLevel = wifi.label
                     val matchesSearch = wifi.ssid.contains(searchQuery, ignoreCase = true)
                     val matchesFilter = when (selectedFilter) {
                         null -> true
@@ -543,7 +541,7 @@ fun FileItem(fileName: String, onClick: () -> Unit, onDelete: () -> Unit) {
 @Composable
 fun WifiItem(wifi: WifiNetworkInfo, onDelete: () -> Unit) {
 
-    var color = getColor(wifi.capabilities)
+    var color = getColor(wifi.label)
 
 
 
@@ -590,13 +588,10 @@ fun WifiItem(wifi: WifiNetworkInfo, onDelete: () -> Unit) {
 
         Text(text = "BSSID: ${wifi.bssid}", color = Color.Gray, fontSize = 12.sp)
         Text(text = "RSSI: ${wifi.rssi} dBm", color = Color.Gray, fontSize = 12.sp)
-        Text(
-            text = "Frequency: ${wifi.frequency} MHz",
-            color = Color.LightGray,
-            fontSize = 12.sp
-        )
+        Text(text = "Frequency: ${wifi.frequency} MHz", color = Color.Gray, fontSize = 12.sp)
         Text(text = "Capabilities: ${wifi.capabilities}", color = Color.Gray, fontSize = 12.sp)
         Text(text = "Timestamp: $dateString", color = Color.Gray, fontSize = 12.sp)
+        Text(text = "Security Level: ${wifi.label}", color = Color.LightGray, fontSize = 12.sp)
     }
 
 
