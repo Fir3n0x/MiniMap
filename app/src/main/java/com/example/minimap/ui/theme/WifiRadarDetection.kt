@@ -12,6 +12,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,8 +40,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavController
 import com.example.minimap.autowide
 import com.example.minimap.model.WifiNetworkInfo
@@ -396,10 +399,21 @@ fun WifiRadarDetection(
                                 ){
                                     drawCircle(color = color)
                                 }
-                                Text(
-                                    text = "SSID : ${network.ssid} - RSSI : ${network.rssi} dBm",
-                                    color = Color.White
-                                )
+
+
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .horizontalScroll(rememberScrollState())
+                                ) {
+                                    Text(
+                                        text = "SSID : ${network.ssid} - RSSI : ${network.rssi} dBm",
+                                        color = Color.White,
+                                        maxLines = 1
+                                    )
+                                }
+
+
                                 InfoButton {
                                     expandedSsid = if (expandedSsid == network.ssid) null else network.ssid
                                 }

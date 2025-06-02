@@ -14,15 +14,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.minimap.model.PublicWifiDetector
+import com.example.minimap.model.PublicWifiKeywords
 import com.example.minimap.model.WifiClassifier
 import com.example.minimap.model.WifiNetworkInfo
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 
 @SuppressLint("MissingPermission", "ServiceCast")
 @Composable
@@ -54,7 +58,7 @@ fun WifiScanScreen(context: Context, navController: NavController) {
             for(result in results){
 
                 //Retrieve features
-                val features = extractFeatures(result)
+                val features = extractFeatures(result, context)
 
                 //Predict security level with model
                 val securityLevel = wifiClassifier.predictSecurityLevel(features)
@@ -87,7 +91,7 @@ fun WifiScanScreen(context: Context, navController: NavController) {
                     )
                 } else {
                     // already available → compare rssi
-                    val diff = kotlin.math.abs(existing.rssi - rssi)
+                    val diff = abs(existing.rssi - rssi)
                     if (diff > 5) {
                         // Significant difference → keep the highest (close to 0)
                         if (rssi > existing.rssi) {
@@ -132,7 +136,7 @@ fun WifiScanPreview() {
 
 
 // Function to retrieve features from a ScanResult
-private fun extractFeatures(scan: ScanResult): FloatArray {
+private fun extractFeatures(scan: ScanResult, context: Context): FloatArray {
     val caps = scan.capabilities.lowercase()
 
     return floatArrayOf(
@@ -150,17 +154,15 @@ private fun extractFeatures(scan: ScanResult): FloatArray {
         if (caps.contains("wps")) 1f else 0f,
         // rssi_class
         when {
-            scan.level >= -60 -> 0f  // Fort
-            scan.level <= -80 -> 2f  // Faible
-            else -> 1f               // Moyen
+            scan.level >= -60 -> 0f  // High
+            scan.level <= -80 -> 2f  // Low
+            else -> 1f               // Medium
         },
         // is_5ghz
         if (scan.frequency > 4000) 1f else 0f,
         // is_hidden
         if (scan.SSID.matches(Regex(".*[0-9A-Fa-f]{4}$"))) 1f else 0f,
         // is_public
-        if (listOf("eduroam", "citywifi", "public", "free").any {
-                scan.SSID.contains(it, ignoreCase = true)
-            }) 1f else 0f
+        if (PublicWifiDetector.isPublicWifi(scan.SSID, context)) 1f else 0f
     )
 }

@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,10 +37,12 @@ import com.example.minimap.TerminalButton
 import com.example.minimap.autowide
 import com.example.minimap.model.Screen
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.text.style.TextOverflow
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiSecurityLevel
 import com.example.minimap.model.getColor
@@ -567,7 +570,19 @@ fun WifiItem(wifi: WifiNetworkInfo, onDelete: () -> Unit) {
                 drawCircle(color = color)
             }
 
-            Text(text = "SSID: ${wifi.ssid}", color = Color.White, fontSize = 14.sp)
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .horizontalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = "SSID: ${wifi.ssid}",
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    maxLines = 1
+                )
+            }
 
 
             Spacer(modifier = Modifier.weight(1f))
