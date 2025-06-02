@@ -79,8 +79,6 @@ fun HomeScreen(navController: NavController) {
     var showUserInfo by remember { mutableStateOf(false) }
     var showScanButton by remember { mutableStateOf(false) }
     var showBottomButtons by remember { mutableStateOf(false) }
-    var showRobot by remember { mutableStateOf(false) }
-    var robotWaving by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (AppState.isFirstLaunch) {
@@ -93,12 +91,6 @@ fun HomeScreen(navController: NavController) {
             delay(400)
             showBottomButtons = true
             delay(700)
-            showRobot = true
-            robotWaving = true
-            delay(1000)
-            robotWaving = false
-            delay(500)
-            showRobot = false
             AppState.isFirstLaunch = false
         } else {
             // Next launch, direct display without animation
@@ -161,15 +153,6 @@ fun HomeScreen(navController: NavController) {
             Box(contentAlignment = Alignment.Center) {
                 ScanButton(navController)
             }
-        }
-
-        AnimatedVisibility(
-            visible = showRobot,
-            enter = if (AppState.isFirstLaunch) fadeIn() + expandVertically(expandFrom = Alignment.Bottom) else fadeIn(animationSpec = tween(0)),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            RobotAnimation(isWaving = robotWaving)
         }
 
         // Bottom button with animation
@@ -378,162 +361,12 @@ fun UserInfoWithWifiIndicator() {
                 }
             }
 
-            // Text "130 observed wifi"
+
             Text(
                 text = "${wifiNetworks.size} observed wifi",
                 color = Color.Green,
                 fontFamily = autowide,
                 fontSize = 14.sp
-            )
-        }
-    }
-}
-
-@Composable
-fun RobotAnimation(isWaving: Boolean) {
-    val infiniteTransition = rememberInfiniteTransition()
-    val waveRotation by infiniteTransition.animateFloat(
-        initialValue = -15f,
-        targetValue = 30f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-    val antennaPulse by infiniteTransition.animateFloat(
-        initialValue = 0.95f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(bottom = 16.dp)
-    ) {
-
-        // Antenna point (with pulsing animation)
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .graphicsLayer {
-                    scaleX = antennaPulse
-                    scaleY = antennaPulse
-                }
-                .background(Color.Green, CircleShape)
-                .offset(y = (-4).dp)
-        )
-        // Antenna wire (spiral)
-        Canvas(modifier = Modifier.size(20.dp, 30.dp)) {
-            drawPath(
-                path = Path().apply {
-                    moveTo(size.width / 2, 0f)
-                    cubicTo(
-                        size.width * 0.8f, size.height * 0.2f,
-                        size.width * 0.2f, size.height * 0.4f,
-                        size.width / 2, size.height * 0.6f
-                    )
-                    cubicTo(
-                        size.width * 0.8f, size.height * 0.8f,
-                        size.width * 0.2f, size.height,
-                        size.width / 2, size.height
-                    )
-                },
-                color = Color.Green,
-                style = Stroke(width = 2.dp.toPx())
-            )
-        }
-
-
-        // head
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .background(Color(0xFF444444), CircleShape)
-                .border(2.dp, Color.Green, CircleShape)
-        ) {
-            // eyes
-            Row(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .background(Color.Green, CircleShape)
-                )
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .background(Color.Green, CircleShape)
-                )
-            }
-
-            // smile
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawArc(
-                    color = Color.Green,
-                    startAngle = 0f,
-                    sweepAngle = 180f,
-                    useCenter = false,
-                    topLeft = Offset(size.width * 0.25f, size.height * 0.5f),
-                    size = androidx.compose.ui.geometry.Size(size.width * 0.5f, size.height * 0.3f),
-                    style = Stroke(width = 2.dp.toPx())
-                )
-            }
-        }
-
-        // robot body
-        Box(
-            modifier = Modifier
-                .size(60.dp, 80.dp)
-                .background(Color(0xFF333333), RoundedCornerShape(8.dp))
-                .border(2.dp, Color.Green, RoundedCornerShape(8.dp))
-        ) {
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // left arm
-                Box(
-                    modifier = Modifier
-                        .size(12.dp, 40.dp)
-                        .graphicsLayer {
-                            rotationZ = if (isWaving) waveRotation else 0f
-                            transformOrigin = TransformOrigin(0.5f, 0f)
-                        }
-                        .background(Color(0xFF444444))
-                        .offset(y = 20.dp)
-                )
-
-                // right arm
-                Box(
-                    modifier = Modifier
-                        .size(12.dp, 40.dp)
-                        .graphicsLayer {
-                            rotationZ = if (isWaving) -waveRotation else 0f
-                            transformOrigin = TransformOrigin(0.5f, 0f)
-                        }
-                        .background(Color(0xFF444444))
-                        .offset(y = 20.dp)
-                )
-            }
-        }
-
-        // Text "Hello there !"
-        AnimatedVisibility(
-            visible = isWaving,
-            enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
-            exit = fadeOut()
-        ) {
-            Text(
-                text = "Hello there !",
-                color = Color.Green,
-                fontSize = 18.sp,
-                modifier = Modifier.padding(top = 8.dp)
             )
         }
     }
