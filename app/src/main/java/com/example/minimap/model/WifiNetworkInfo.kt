@@ -17,5 +17,5 @@ data class WifiNetworkInfo (
     val venueName : CharSequence = "",
     val isPasspointNetwork : Boolean = false,
     val is80211mcResponder : Boolean = false,
-    val label : WifiSecurityLevel = WifiSecurityLevel.SAFE
+    val label : WifiSecurityLevel = WifiSecurityLevel.DANGEROUS
 )

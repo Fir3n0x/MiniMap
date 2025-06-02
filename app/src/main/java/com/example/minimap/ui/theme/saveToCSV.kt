@@ -3,6 +3,7 @@ package com.example.minimap.ui.theme
 import android.content.Context
 import android.util.Log
 import com.example.minimap.model.WifiNetworkInfo
+import com.example.minimap.model.stringToSecurityLevel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -41,7 +42,7 @@ fun readWifiNetworksFromCsv(context: Context, fileName: String): List<WifiNetwor
 
             val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
-            if (parts.size >= 6) {
+            if (parts.size >= 7) {
                 try {
                     val ssid = parts[0]
                     val bssid = parts[1]
@@ -50,8 +51,9 @@ fun readWifiNetworksFromCsv(context: Context, fileName: String): List<WifiNetwor
                     val capabilities = parts[4]
                     val date = dateFormat.parse(parts[5]) ?: return@mapNotNull null
                     val timestamp = date.time
+                    val label = stringToSecurityLevel(parts[6])
 
-                    WifiNetworkInfo(ssid, bssid, rssi, frequency, capabilities, timestamp)
+                    WifiNetworkInfo(ssid = ssid, bssid = bssid, rssi = rssi, frequency = frequency, capabilities = capabilities, timestamp = timestamp, label = label)
                 } catch (e: Exception) {
                     Log.e("CSV", "Error parsing line: $line", e)
                     null

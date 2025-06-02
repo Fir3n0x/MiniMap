@@ -1,9 +1,6 @@
 package com.example.minimap.model
 
-import android.content.Context
 import androidx.compose.ui.graphics.Color
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
 
 enum class WifiSecurityLevel {
     SAFE, MEDIUM, DANGEROUS;
@@ -21,4 +18,16 @@ enum class WifiSecurityLevel {
 
 fun getColor(securityLevel: WifiSecurityLevel): Color {
     return securityLevel.getColor()
+}
+
+
+fun stringToSecurityLevel(securityLevel: String): WifiSecurityLevel {
+    return when(securityLevel) {
+        "SAFE" -> WifiSecurityLevel.SAFE
+        "MEDIUM" -> WifiSecurityLevel.MEDIUM
+        "DANGEROUS" -> WifiSecurityLevel.DANGEROUS
+        else -> {
+            WifiSecurityLevel.DANGEROUS
+        }
+    }
 }
