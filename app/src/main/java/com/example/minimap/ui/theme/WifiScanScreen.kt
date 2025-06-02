@@ -20,6 +20,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.minimap.model.WifiClassifier
 import com.example.minimap.model.WifiNetworkInfo
 import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @SuppressLint("MissingPermission", "ServiceCast")
 @Composable
@@ -70,13 +73,17 @@ fun WifiScanScreen(context: Context, navController: NavController) {
                 val isPasspointNetwork = result.isPasspointNetwork
                 val is80211mcResponder = result.is80211mcResponder
 
+                val timestampMillis = System.currentTimeMillis()
+                val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                val formatted = sdf.format(Date(timestampMillis))
+
                 if (ssid.isBlank()) continue // ignore empty ssid
 
                 val existing = uniqueNetworks[ssid]
                 if (existing == null) {
                     // no include -> add up
                     uniqueNetworks[ssid] = WifiNetworkInfo(
-                        ssid = ssid, bssid = bssid, rssi = rssi, frequency = frequency, capabilities = capabilities, timestamp = timestamp, label = securityLevel
+                        ssid = ssid, bssid = bssid, rssi = rssi, frequency = frequency, capabilities = capabilities, timestamp = timestamp, label = securityLevel, timestampFormatted = formatted
                     )
                 } else {
                     // already available → compare rssi
@@ -85,7 +92,7 @@ fun WifiScanScreen(context: Context, navController: NavController) {
                         // Significant difference → keep the highest (close to 0)
                         if (rssi > existing.rssi) {
                             uniqueNetworks[ssid] = WifiNetworkInfo(
-                                ssid = ssid, bssid = bssid, rssi = rssi, frequency = frequency, capabilities = capabilities, timestamp = timestamp, label = securityLevel
+                                ssid = ssid, bssid = bssid, rssi = rssi, frequency = frequency, capabilities = capabilities, timestamp = timestamp, label = securityLevel, timestampFormatted = formatted
                             )
                         }
                     }

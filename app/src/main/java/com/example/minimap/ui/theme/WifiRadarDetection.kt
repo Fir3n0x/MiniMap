@@ -64,7 +64,6 @@ fun WifiRadarDetection(
     onToggleRunning: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-
     var expanded by remember { mutableStateOf(false) }
 
 

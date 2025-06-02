@@ -10,12 +10,13 @@ data class WifiNetworkInfo (
     val frequency : Int,
     val capabilities : String,
     val timestamp : Long,
+    val label : WifiSecurityLevel = WifiSecurityLevel.DANGEROUS,
+    val timestampFormatted: String = "",
     val channel : Int = 0,
     val centerFreq0 : Int = 0,
     val centerFreq1 : Int = 0,
     val operatorFriendlyName : CharSequence = "",
     val venueName : CharSequence = "",
     val isPasspointNetwork : Boolean = false,
-    val is80211mcResponder : Boolean = false,
-    val label : WifiSecurityLevel = WifiSecurityLevel.DANGEROUS
+    val is80211mcResponder : Boolean = false
 )
