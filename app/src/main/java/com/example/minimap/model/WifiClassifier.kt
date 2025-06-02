@@ -37,7 +37,7 @@ class WifiClassifier(context: Context) {
         }
 
         return when (output[0].indices.maxByOrNull { output[0][it] }) {
-            0 -> WifiSecurityLevel.SAFE
+            2 -> WifiSecurityLevel.SAFE
             1 -> WifiSecurityLevel.MEDIUM
             else -> WifiSecurityLevel.DANGEROUS
         }
