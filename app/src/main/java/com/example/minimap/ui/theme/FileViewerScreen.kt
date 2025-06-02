@@ -1,6 +1,10 @@
 package com.example.minimap.ui.theme
 
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -38,7 +42,9 @@ import com.example.minimap.autowide
 import com.example.minimap.model.Screen
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.mutableIntStateOf
@@ -497,10 +503,18 @@ fun FileViewerScreen(navController: NavController) {
                 {
 
                     items(filteredWifi) { wifi ->
-                        WifiItem(wifi, onDelete = {
-                            wifiToDelete = wifi
-                            showWifiDeleteDialog = true
-                        })
+                        WifiItem(
+                            wifi = wifi,
+                            onDelete = {
+                                wifiToDelete = wifi
+                                showWifiDeleteDialog = true
+                            },
+                            onLocationClick = {
+                                if (wifi.latitude != 0.0 && wifi.longitude != 0.0) {
+                                    openGoogleMaps(context, wifi)
+                                }
+                            }
+                        )
                     }
                 }
             }
@@ -527,13 +541,16 @@ fun FileItem(fileName: String, onClick: () -> Unit, onDelete: () -> Unit) {
             modifier = Modifier.clickable { onClick() }
         )
 
-        Text(
-            text = "|x|",
-            color = Color.Red,
-            fontSize = 18.sp,
+        // Deleting button
+        androidx.compose.material3.Icon(
+            imageVector = androidx.compose.material.icons.Icons.Default.Close,
+            contentDescription = "Delete",
+            tint = Color.Red,
             modifier = Modifier
-                .clickable { onDelete() }
-                .padding(start = 12.dp)
+                .size(24.dp)
+                .clickable {
+                    onDelete()
+                }
         )
     }
 }
@@ -542,7 +559,7 @@ fun FileItem(fileName: String, onClick: () -> Unit, onDelete: () -> Unit) {
 
 
 @Composable
-fun WifiItem(wifi: WifiNetworkInfo, onDelete: () -> Unit) {
+fun WifiItem(wifi: WifiNetworkInfo, onDelete: () -> Unit, onLocationClick: () -> Unit) {
 
     var color = getColor(wifi.label)
 
@@ -585,16 +602,38 @@ fun WifiItem(wifi: WifiNetworkInfo, onDelete: () -> Unit) {
             }
 
 
+
+
             Spacer(modifier = Modifier.weight(1f))
 
-            // Deleting button
-            Text(
-                text = "|x|",
-                color = Color.Red,
-                fontSize = 18.sp,
+
+            // Browse Location button
+            androidx.compose.material3.Icon(
+                imageVector = androidx.compose.material.icons.Icons.Default.LocationOn,
+                contentDescription = "Browse Location",
+                tint = Color.Green,
                 modifier = Modifier
-                    .clickable { onDelete() }
-                    .padding(start = 12.dp)
+                    .size(24.dp)
+                    .clickable {
+                        onLocationClick()
+                    }
+            )
+
+
+            Spacer(modifier = Modifier.weight(0.2f))
+
+
+
+            // Deleting button
+            androidx.compose.material3.Icon(
+                imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                contentDescription = "Delete",
+                tint = Color.Red,
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable {
+                        onDelete()
+                    }
             )
         }
 
@@ -607,8 +646,22 @@ fun WifiItem(wifi: WifiNetworkInfo, onDelete: () -> Unit) {
         Text(text = "Capabilities: ${wifi.capabilities}", color = Color.Gray, fontSize = 12.sp)
         Text(text = "Timestamp: $dateString", color = Color.Gray, fontSize = 12.sp)
         Text(text = "Security Level: ${wifi.label}", color = Color.LightGray, fontSize = 12.sp)
+        Text(text = "Latitude: ${wifi.latitude}", color = Color.Gray, fontSize = 12.sp)
+        Text(text = "Longitude: ${wifi.longitude}", color = Color.Gray, fontSize = 12.sp)
     }
+}
 
 
-
+private fun openGoogleMaps(context: Context, wifi: WifiNetworkInfo) {
+    try {
+        val uri = "geo:${wifi.latitude},${wifi.longitude}?q=${wifi.latitude},${wifi.longitude}(${wifi.ssid})&z=17"
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+        intent.setPackage("com.google.android.apps.maps")
+        context.startActivity(intent)
+    } catch (e: ActivityNotFoundException) {
+        // Si Google Maps n'est pas installé, ouvrir avec un autre viewer
+        val uri = "geo:${wifi.latitude},${wifi.longitude}?q=${wifi.latitude},${wifi.longitude}(${wifi.ssid})&z=17"
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+        context.startActivity(intent)
+    }
 }

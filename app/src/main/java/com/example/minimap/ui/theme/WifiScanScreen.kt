@@ -16,21 +16,36 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.minimap.model.PublicWifiDetector
 import com.example.minimap.model.PublicWifiKeywords
 import com.example.minimap.model.WifiClassifier
 import com.example.minimap.model.WifiNetworkInfo
+import com.example.minimap.model.WifiScannerViewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 
+@OptIn(ExperimentalPermissionsApi::class)
 @SuppressLint("MissingPermission", "ServiceCast")
 @Composable
 fun WifiScanScreen(context: Context, navController: NavController) {
+
+
+    val viewModel: WifiScannerViewModel = viewModel()
+    val context = LocalContext.current
+
+// Initialize client location at launching
+    LaunchedEffect(Unit) {
+        viewModel.initLocationClient(context)
+    }
 
 
     val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
@@ -41,12 +56,32 @@ fun WifiScanScreen(context: Context, navController: NavController) {
     var isRunning by remember { mutableStateOf(true) }
 
 
+    var currentLatitude by remember { mutableStateOf(0.0) }
+    var currentLongitude by remember { mutableStateOf(0.0) }
+
+
     // Initialize classifier
     val wifiClassifier = remember { WifiClassifier(context) }
 
 
+    val locationPermissionState = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
+
+    LaunchedEffect(Unit) {
+        if (!locationPermissionState.permission.isEmpty()) {
+            locationPermissionState.launchPermissionRequest()
+        }
+    }
+
+
     LaunchedEffect(isRunning) {
         while (isRunning) {
+
+            // Get current location
+            viewModel.fetchLastLocation { location ->
+                currentLatitude = location.latitude
+                currentLongitude = location.longitude
+            }
+
             wifiManager.startScan()
             delay(1000)
             val results = wifiManager.scanResults
@@ -62,6 +97,7 @@ fun WifiScanScreen(context: Context, navController: NavController) {
 
                 //Predict security level with model
                 val securityLevel = wifiClassifier.predictSecurityLevel(features)
+
 
                 val ssid = result.SSID
                 val rssi = result.level
@@ -87,7 +123,16 @@ fun WifiScanScreen(context: Context, navController: NavController) {
                 if (existing == null) {
                     // no include -> add up
                     uniqueNetworks[ssid] = WifiNetworkInfo(
-                        ssid = ssid, bssid = bssid, rssi = rssi, frequency = frequency, capabilities = capabilities, timestamp = timestamp, label = securityLevel, timestampFormatted = formatted
+                        ssid = ssid,
+                        bssid = bssid,
+                        rssi = rssi,
+                        frequency = frequency,
+                        capabilities = capabilities,
+                        timestamp = timestamp,
+                        label = securityLevel,
+                        timestampFormatted = formatted,
+                        latitude = currentLatitude,
+                        longitude = currentLongitude
                     )
                 } else {
                     // already available → compare rssi
@@ -96,7 +141,16 @@ fun WifiScanScreen(context: Context, navController: NavController) {
                         // Significant difference → keep the highest (close to 0)
                         if (rssi > existing.rssi) {
                             uniqueNetworks[ssid] = WifiNetworkInfo(
-                                ssid = ssid, bssid = bssid, rssi = rssi, frequency = frequency, capabilities = capabilities, timestamp = timestamp, label = securityLevel, timestampFormatted = formatted
+                                ssid = ssid,
+                                bssid = bssid,
+                                rssi = rssi,
+                                frequency = frequency,
+                                capabilities = capabilities,
+                                timestamp = timestamp,
+                                label = securityLevel,
+                                timestampFormatted = formatted,
+                                latitude = currentLatitude,
+                                longitude = currentLongitude
                             )
                         }
                     }

@@ -52,8 +52,20 @@ fun readWifiNetworksFromCsv(context: Context, fileName: String): List<WifiNetwor
                     val date = dateFormat.parse(parts[5]) ?: return@mapNotNull null
                     val timestamp = date.time
                     val label = stringToSecurityLevel(parts[6])
+                    val latitude = parts[7].toDoubleOrNull() ?: return@mapNotNull null
+                    val longitude = parts[8].toDoubleOrNull() ?: return@mapNotNull null
 
-                    WifiNetworkInfo(ssid = ssid, bssid = bssid, rssi = rssi, frequency = frequency, capabilities = capabilities, timestamp = timestamp, label = label)
+                    WifiNetworkInfo(
+                        ssid = ssid,
+                        bssid = bssid,
+                        rssi = rssi,
+                        frequency = frequency,
+                        capabilities = capabilities,
+                        timestamp = timestamp,
+                        label = label,
+                        latitude = latitude,
+                        longitude = longitude
+                    )
                 } catch (e: Exception) {
                     Log.e("CSV", "Error parsing line: $line", e)
                     null
@@ -80,7 +92,7 @@ fun appendNewWifisToCsv(context: Context, fileName: String, newNetworks: List<Wi
     newNetworks.forEach { network ->
         val key = "${network.ssid}:${network.bssid}"
         if (!knownKeys.contains(key)) {
-            val line = "${network.ssid};${network.bssid};${network.rssi};${network.frequency};${network.capabilities};${formattedTime};${network.label}\n"
+            val line = "${network.ssid};${network.bssid};${network.rssi};${network.frequency};${network.capabilities};${formattedTime};${network.label};${network.latitude};${network.longitude}\n"
             file.appendText(line)
             knownKeys.add(key)
         }

@@ -437,6 +437,8 @@ fun WifiRadarDetection(
 
                                     Text("Timestamp : $readableDate", color = Color.LightGray)
                                     Text("Security Level : ${network.label}", color = Color.LightGray)
+                                    Text("Latitude : ${network.latitude}", color = Color.LightGray)
+                                    Text("Longitude : ${network.longitude}", color = Color.LightGray)
                                 }
                             }
                         }
