@@ -1,6 +1,9 @@
 package com.example.minimap.ui.theme
 
+import android.content.Context
 import android.os.SystemClock
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -42,19 +45,27 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavController
 import com.example.minimap.autowide
+import com.example.minimap.model.PlusOneAnimation
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiSecurityLevel
 import com.example.minimap.model.getColor
+import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.text.SimpleDateFormat
+import java.time.format.TextStyle
 import java.util.Date
 import java.util.Locale
 
@@ -63,6 +74,7 @@ import java.util.Locale
 fun WifiRadarDetection(
     navController: NavController,
     networks: List<WifiNetworkInfo>,
+    newNetworks: List<WifiNetworkInfo>,
     isRunning: Boolean,
     onToggleRunning: () -> Unit,
     modifier: Modifier = Modifier
@@ -77,11 +89,7 @@ fun WifiRadarDetection(
 
 
     var expandedSsid by remember { mutableStateOf<String?>(null) }
-
-
     var selectedSsid by remember { mutableStateOf<String?>(null) }
-
-
 
 
 
@@ -131,6 +139,41 @@ fun WifiRadarDetection(
 
 
 
+
+
+
+    // FIX 1: Use state-based animation list instead of mutableStateList
+    var animationList by remember { mutableStateOf(emptyList<Float>()) }
+
+    // FIX 2: Track handled networks to prevent duplicate vibrations
+    var handledNewNetworks by remember { mutableStateOf(emptySet<String>()) }
+
+    // New network detection
+    LaunchedEffect(newNetworks) {
+        if (newNetworks.isNotEmpty() && isRunning) {
+            val trulyNew = newNetworks.filter { it.ssid !in handledNewNetworks }
+            if (trulyNew.isNotEmpty()) {
+                vibrateDevice(context)
+                handledNewNetworks = handledNewNetworks + trulyNew.map { it.ssid }
+                // Add new animations
+                animationList = animationList + List(trulyNew.size) { 0f }
+            }
+        }
+    }
+
+    // Animation update logic
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(16) // ~60 FPS
+            if (animationList.isNotEmpty()) {
+                animationList = animationList.map { progress ->
+                    (progress + 0.02f).coerceAtMost(1f)
+                }
+                // Remove finished animations
+                animationList = animationList.filter { it < 1f }
+            }
+        }
+    }
 
 
 
@@ -204,6 +247,9 @@ fun WifiRadarDetection(
 
 
 
+
+
+
                     // Radar length
                     val rawWidth = size.width * 0.8f
                     val rawHeight = size.height * 0.5f
@@ -223,7 +269,8 @@ fun WifiRadarDetection(
 
 
 
-                    // 1. Radar frame
+
+                    // Radar frame
                     drawRect(
                         color = Color.Black,
                         topLeft = topLeft,
@@ -263,6 +310,9 @@ fun WifiRadarDetection(
 
 
 
+
+
+
                     if(isRunning) {
                         with(drawContext.canvas) {
                             save() // save context
@@ -295,6 +345,29 @@ fun WifiRadarDetection(
                         val pos = Offset(x, y)
 
 
+                        // Draw "+1" animation
+                        animationList.forEach { progress ->
+                            val alpha = 1f - progress
+                            val yOffset = -50 * progress
+                            drawContext.canvas.nativeCanvas.apply {
+                                drawText(
+                                    "+1",
+                                    x,
+                                    y + yOffset,
+                                    android.graphics.Paint().apply {
+                                        color = android.graphics.Color.argb(
+                                            (alpha * 255).toInt(),
+                                            0, 255, 0
+                                        )
+                                        textSize = 40.sp.toPx()
+                                        isFakeBoldText = true
+                                        textAlign = android.graphics.Paint.Align.CENTER
+                                    }
+                                )
+                            }
+                        }
+
+
                         val color = getColor(network.label)
 
                         // Pulse circle
@@ -312,9 +385,15 @@ fun WifiRadarDetection(
                             radius = if (network.ssid == selectedSsid) 20f else 10f,
                             center = pos
                         )
+
+
+
                     }
                 }
             }
+
+
+
 
 
             Text(
@@ -475,4 +554,16 @@ fun ExportButton(onClick: () -> Unit) {
             .padding(horizontal = 12.dp, vertical = 6.dp)
             .clickable { onClick() }
     )
+}
+
+// Handle device vibration
+fun vibrateDevice(context: Context) {
+    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    if (vibrator.hasVibrator()) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            vibrator.vibrate(100)
+        }
+    }
 }

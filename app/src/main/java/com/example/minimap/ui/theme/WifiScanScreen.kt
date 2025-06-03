@@ -5,8 +5,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
+import android.os.PowerManager
+import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -42,9 +45,34 @@ fun WifiScanScreen(context: Context, navController: NavController) {
     val viewModel: WifiScannerViewModel = viewModel()
     val context = LocalContext.current
 
-// Initialize client location at launching
+    // Initialize client location at launching
     LaunchedEffect(Unit) {
         viewModel.initLocationClient(context)
+    }
+
+    val powerManager = remember { context.getSystemService(Context.POWER_SERVICE) as PowerManager }
+    var wakeLock: PowerManager.WakeLock? by remember { mutableStateOf(null) }
+
+    // Acquire wake lock when screen is displayed
+    LaunchedEffect(Unit) {
+        wakeLock = powerManager.newWakeLock(
+            PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE,
+            "Minimap:WifiScanWakeLock"
+        )
+        wakeLock?.acquire()
+        //wakeLock?.acquire(10*60*1000L /*10 minutes*/)
+    }
+
+    // Release wake lock when leaving the screen
+    DisposableEffect(Unit) {
+        onDispose {
+            wakeLock?.let {
+                if (it.isHeld) {
+                    it.release()
+                }
+            }
+            wakeLock = null
+        }
     }
 
 
@@ -62,6 +90,9 @@ fun WifiScanScreen(context: Context, navController: NavController) {
 
     // Initialize classifier
     val wifiClassifier = remember { WifiClassifier(context) }
+
+    // Ajoutez cette variable pour suivre les nouveaux réseaux
+    var newDiscoveredNetworks by remember { mutableStateOf<List<WifiNetworkInfo>>(emptyList()) }
 
 
     val locationPermissionState = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
@@ -85,6 +116,8 @@ fun WifiScanScreen(context: Context, navController: NavController) {
             wifiManager.startScan()
             delay(1000)
             val results = wifiManager.scanResults
+
+
 
 
 
@@ -159,19 +192,37 @@ fun WifiScanScreen(context: Context, navController: NavController) {
             }
 
 
+            // List known wifi from .csv
+            val knownNetworks = readWifiNetworksFromCsv(context, "wifis_dataset.csv")
+            val knownKeys = knownNetworks.map { "${it.ssid}:${it.bssid}" }.toSet()
+
+
+            // Filter new wifi
+            val currentNetworks = uniqueNetworks.values.toList()
+            val trulyNewNetworks = currentNetworks.filter {
+                !knownKeys.contains("${it.ssid}:${it.bssid}")
+            }
+
+            // Update new wifi
+            if (trulyNewNetworks.isNotEmpty()) {
+                newDiscoveredNetworks = trulyNewNetworks
+            }
+
+
             appendNewWifisToCsv(context, "wifis_dataset.csv", uniqueNetworks.values.toList())
 
 
 
             wifiNetworks.clear()
             wifiNetworks.addAll(uniqueNetworks.values)
+
             delay(2000)
 
         }
     }
 
 //    WifiRadarView(networks = wifiNetworks.values.toList(), modifier = Modifier.fillMaxSize())
-    WifiRadarDetection(navController = navController, networks = wifiNetworks.toList(), isRunning = isRunning, onToggleRunning = {isRunning = !isRunning}, modifier = Modifier.fillMaxSize())
+    WifiRadarDetection(navController = navController, networks = wifiNetworks.toList(), newNetworks = newDiscoveredNetworks, isRunning = isRunning, onToggleRunning = {isRunning = !isRunning}, modifier = Modifier.fillMaxSize())
 }
 
 
@@ -179,13 +230,16 @@ fun WifiScanScreen(context: Context, navController: NavController) {
 @Composable
 @Preview(showBackground = true, backgroundColor = 0xFF000000)
 fun WifiScanPreview() {
+
+    var newDiscoveredNetworks: List<WifiNetworkInfo> = emptyList()
+
     val mockNetworks = listOf(
         WifiNetworkInfo("INSA_WIFI", "9", 9, 4, "4", 4),
     )
 
     var isRunning: Boolean = true
 
-    WifiRadarDetection(navController = rememberNavController(), networks = mockNetworks, isRunning = isRunning, onToggleRunning = {isRunning = !isRunning}, modifier = Modifier.fillMaxSize())
+    WifiRadarDetection(navController = rememberNavController(), networks = mockNetworks, newNetworks = newDiscoveredNetworks, isRunning = isRunning, onToggleRunning = {isRunning = !isRunning}, modifier = Modifier.fillMaxSize())
 }
 
 
