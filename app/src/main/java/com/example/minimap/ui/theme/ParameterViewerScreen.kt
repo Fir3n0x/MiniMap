@@ -73,6 +73,11 @@ fun ParameterViewerScreen(navController: NavController) {
             title = "Auto save Wifi",
             description = "Automatically saves the results of the WiFi scan locally on the device."
         ),
+        ParamOption(
+            key = "vibration",
+            title = "Device Vibration",
+            description = "Enable device vibration when discovering a new wifi"
+        )
     )
     val notificationOptions = listOf(
         ParamOption(
@@ -114,9 +119,10 @@ fun ParameterViewerScreen(navController: NavController) {
     val context = LocalContext.current
     val settingsRepo = remember { SettingsRepository(context) }
 
-    // 3) On lit en Flow les préférences persistées pour AutoScan et Notifications
+    // On lit en Flow les préférences persistées pour AutoScan et Notifications
     val autoScanEnabledState by settingsRepo.autoScanEnabledFlow.collectAsState(initial = false)
     val notificationEnabledState by settingsRepo.notificationEnabledFlow.collectAsState(initial = false)
+    val vibrationEnabledState by settingsRepo.vibrationEnabledFlow.collectAsState(initial = false)
 
     // Pour planifier ou annuler le WorkManager
     val workManager = androidx.work.WorkManager.getInstance(context)
@@ -130,7 +136,8 @@ fun ParameterViewerScreen(navController: NavController) {
             // Initialiser toutes les clés non gérées par DataStore à false
             (scanOptions + notificationOptions + aboutOptions).forEach { opt ->
                 if (opt.key != SettingsKeys.AUTO_SCAN_ENABLED.name &&
-                    opt.key != SettingsKeys.NOTIFICATION_ENABLED.name
+                    opt.key != SettingsKeys.NOTIFICATION_ENABLED.name &&
+                    opt.key != SettingsKeys.VIBRATION_ENABLED.name
                 ) {
                     this[opt.key] = false
                 }
@@ -308,6 +315,37 @@ fun ParameterViewerScreen(navController: NavController) {
                                 )
                                 Text(
                                     text = scanOptions[1].description,
+                                    color = Color.LightGray,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+
+                        Divider(color = Color.DarkGray, thickness = 1.dp)
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Checkbox(
+                                checked = vibrationEnabledState,
+                                onCheckedChange = { checked ->
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        settingsRepo.setVibrationEnabled(checked)
+                                    }
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = scanOptions[2].title, // "Device Vibration"
+                                    color = Color.White,
+                                    fontSize = 16.sp
+                                )
+                                Text(
+                                    text = scanOptions[2].description,
                                     color = Color.LightGray,
                                     fontSize = 12.sp
                                 )

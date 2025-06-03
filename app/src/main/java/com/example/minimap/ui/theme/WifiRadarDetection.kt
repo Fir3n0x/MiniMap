@@ -1,9 +1,12 @@
 package com.example.minimap.ui.theme
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -46,14 +49,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.minimap.autowide
+import com.example.minimap.data.preferences.SettingsRepository
 import com.example.minimap.model.PlusOneAnimation
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiSecurityLevel
@@ -68,6 +74,8 @@ import java.text.SimpleDateFormat
 import java.time.format.TextStyle
 import java.util.Date
 import java.util.Locale
+import java.util.jar.Manifest
+
 
 
 @Composable
@@ -124,8 +132,14 @@ fun WifiRadarDetection(
     }.toMap()
 
 
+
+
+
     val context = LocalContext.current
     var showExportDialog by remember { mutableStateOf(false) }
+
+    val settingsRepo = remember { SettingsRepository(context) }
+    val vibrationEnabled by settingsRepo.vibrationEnabledFlow.collectAsState(initial = false)
 
     if (showExportDialog) {
         ExportDialog(
@@ -156,7 +170,10 @@ fun WifiRadarDetection(
             }
 
             if (trulyNew.isNotEmpty()) {
-                vibrateDevice(context)
+                if (vibrationEnabled) {
+                    vibrateDevice(context)
+                }
+
                 handledNetworks = handledNetworks + trulyNew.map { it.bssid }
 
                 // Animation for each new wifi
@@ -576,12 +593,17 @@ fun ExportButton(onClick: () -> Unit) {
 
 // Handle device vibration
 fun vibrateDevice(context: Context) {
-    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-    if (vibrator.hasVibrator()) {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
-        } else {
-            vibrator.vibrate(100)
+    val vibrator = ContextCompat.getSystemService(context, Vibrator::class.java)
+    if (vibrator?.hasVibrator() == true) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(100)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

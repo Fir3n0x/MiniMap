@@ -13,6 +13,7 @@ val Context.settingsDataStore by preferencesDataStore(name = "settings_prefs")
 object SettingsKeys {
     val AUTO_SCAN_ENABLED = booleanPreferencesKey("auto_scan_enabled")
     val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
+    val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
 }
 
 class SettingsRepository(val context: Context) {
@@ -23,6 +24,9 @@ class SettingsRepository(val context: Context) {
     // Flow<Boolean> pour savoir si Notifications est activé
     val notificationEnabledFlow: Flow<Boolean> = context.settingsDataStore.data
         .map { prefs -> prefs[SettingsKeys.NOTIFICATION_ENABLED] ?: false }
+
+    val vibrationEnabledFlow: Flow<Boolean> = context.settingsDataStore.data
+        .map { prefs -> prefs[SettingsKeys.VIBRATION_ENABLED] ?: false }
 
     // Fonction pour changer l’état de l’autoScan
     suspend fun setAutoScanEnabled(isEnabled: Boolean) {
@@ -35,6 +39,12 @@ class SettingsRepository(val context: Context) {
     suspend fun setNotificationEnabled(isEnabled: Boolean) {
         context.settingsDataStore.edit { prefs ->
             prefs[SettingsKeys.NOTIFICATION_ENABLED] = isEnabled
+        }
+    }
+
+    suspend fun setVibrationEnabled(isEnabled: Boolean) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[SettingsKeys.VIBRATION_ENABLED] = isEnabled
         }
     }
 }
