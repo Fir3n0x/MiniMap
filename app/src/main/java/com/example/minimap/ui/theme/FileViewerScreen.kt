@@ -232,7 +232,7 @@ fun FileViewerScreen(navController: NavController) {
                                         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                                         val currentTime = it.timestamp
                                         val formattedTime = sdf.format(Date(currentTime))
-                                        val line = listOf(it.ssid, it.bssid, it.rssi.toString(), it.frequency.toString(), it.capabilities, formattedTime, it.label).joinToString(";")
+                                        val line = listOf(it.ssid, it.bssid, it.rssi.toString(), it.frequency.toString(), it.capabilities, formattedTime, it.label, it.latitude, it.longitude).joinToString(";")
 
                                         csvFile.appendText("$line\n")
                                     }

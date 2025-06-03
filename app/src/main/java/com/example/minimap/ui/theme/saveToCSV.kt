@@ -28,54 +28,48 @@ fun readKnownWifiKeys(context: Context, fileName: String): MutableSet<String> {
 
 fun readWifiNetworksFromCsv(context: Context, fileName: String): List<WifiNetworkInfo> {
     val file = File(context.filesDir, fileName)
-    Log.d("DEBUG", "Looking for file at: ${file.absolutePath}")
+    if (!file.exists()) return emptyList()
 
-
-    if (!file.exists()) {
-        Log.d("DEBUG", "File does not exist!")
-        return emptyList()
-    }
-
-    return file.readLines()
-        .mapNotNull { line ->
+    return try {
+        file.readLines().mapNotNull { line ->
             val parts = line.split(";")
-
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-
-            if (parts.size >= 7) {
-                try {
-                    val ssid = parts[0]
-                    val bssid = parts[1]
-                    val rssi = parts[2].toIntOrNull() ?: return@mapNotNull null
-                    val frequency = parts[3].toIntOrNull() ?: return@mapNotNull null
-                    val capabilities = parts[4]
-                    val date = dateFormat.parse(parts[5]) ?: return@mapNotNull null
-                    val timestamp = date.time
-                    val label = stringToSecurityLevel(parts[6])
-                    val latitude = parts[7].toDoubleOrNull() ?: return@mapNotNull null
-                    val longitude = parts[8].toDoubleOrNull() ?: return@mapNotNull null
-
-                    WifiNetworkInfo(
-                        ssid = ssid,
-                        bssid = bssid,
-                        rssi = rssi,
-                        frequency = frequency,
-                        capabilities = capabilities,
-                        timestamp = timestamp,
-                        label = label,
-                        latitude = latitude,
-                        longitude = longitude
-                    )
+            if (parts.size >= 9) {
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                val ssid = parts[0]
+                val bssid = parts[1]
+                val rssi = parts[2].toIntOrNull() ?: -100
+                val frequency = parts[3].toIntOrNull() ?: 0
+                val capabilities = parts[4]
+                val date = try {
+                    dateFormat.parse(parts[5]) ?: Date()
                 } catch (e: Exception) {
-                    Log.e("CSV", "Error parsing line: $line", e)
-                    null
+                    Date()
                 }
+                val timestamp = date.time
+                val label = stringToSecurityLevel(parts[6])
+                val latitude = parts[7].toDoubleOrNull() ?: 0.0
+                val longitude = parts[8].toDoubleOrNull() ?: 0.0
+
+                WifiNetworkInfo(
+                    ssid = ssid,
+                    bssid = bssid,
+                    rssi = rssi,
+                    frequency = frequency,
+                    capabilities = capabilities,
+                    timestamp = timestamp,
+                    label = label,
+                    latitude = latitude,
+                    longitude = longitude
+                )
             } else {
                 null
             }
         }
+    } catch (e: Exception) {
+        Log.e("CSV", "Error reading file", e)
+        emptyList()
+    }
 }
-
 
 
 

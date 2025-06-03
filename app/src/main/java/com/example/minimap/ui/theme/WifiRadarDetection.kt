@@ -142,21 +142,27 @@ fun WifiRadarDetection(
 
 
 
-    // FIX 1: Use state-based animation list instead of mutableStateList
-    var animationList by remember { mutableStateOf(emptyList<Float>()) }
+    //Use state-based animation list instead of mutableStateList
+    var animationList by remember { mutableStateOf(emptyList<PlusOneAnimation>()) }
 
-    // FIX 2: Track handled networks to prevent duplicate vibrations
-    var handledNewNetworks by remember { mutableStateOf(emptySet<String>()) }
+    //Track handled networks to prevent duplicate vibrations
+    var handledNetworks by remember { mutableStateOf(emptySet<String>()) }
 
     // New network detection
     LaunchedEffect(newNetworks) {
         if (newNetworks.isNotEmpty() && isRunning) {
-            val trulyNew = newNetworks.filter { it.ssid !in handledNewNetworks }
+            val trulyNew = newNetworks.filter {
+                it.bssid !in handledNetworks && it.ssid.isNotBlank()
+            }
+
             if (trulyNew.isNotEmpty()) {
                 vibrateDevice(context)
-                handledNewNetworks = handledNewNetworks + trulyNew.map { it.ssid }
-                // Add new animations
-                animationList = animationList + List(trulyNew.size) { 0f }
+                handledNetworks = handledNetworks + trulyNew.map { it.bssid }
+
+                // Animation for each new wifi
+                animationList = animationList + trulyNew.map {
+                    PlusOneAnimation(id = it.bssid, progress = 0f)
+                }
             }
         }
     }
@@ -166,11 +172,10 @@ fun WifiRadarDetection(
         while (true) {
             delay(16) // ~60 FPS
             if (animationList.isNotEmpty()) {
-                animationList = animationList.map { progress ->
-                    (progress + 0.02f).coerceAtMost(1f)
+                animationList = animationList.map { anim ->
+                    anim.copy(progress = (anim.progress + 0.02f).coerceAtMost(1f))
                 }
-                // Remove finished animations
-                animationList = animationList.filter { it < 1f }
+                animationList = animationList.filter { it.progress < 1f }
             }
         }
     }
@@ -346,24 +351,37 @@ fun WifiRadarDetection(
 
 
                         // Draw "+1" animation
-                        animationList.forEach { progress ->
-                            val alpha = 1f - progress
-                            val yOffset = -50 * progress
-                            drawContext.canvas.nativeCanvas.apply {
-                                drawText(
-                                    "+1",
-                                    x,
-                                    y + yOffset,
-                                    android.graphics.Paint().apply {
-                                        color = android.graphics.Color.argb(
-                                            (alpha * 255).toInt(),
-                                            0, 255, 0
-                                        )
-                                        textSize = 40.sp.toPx()
-                                        isFakeBoldText = true
-                                        textAlign = android.graphics.Paint.Align.CENTER
-                                    }
-                                )
+                        animationList.forEach { anim ->
+                            val network = networks.find { it.bssid == anim.id }
+                            if (network != null) {
+                                // Position only for this wifi
+                                val strength = (abs(network.rssi)).coerceIn(0, 100)
+                                val maxDistanceH = radarHeight / 2f
+                                val maxDistanceW = radarWidth / 2f
+                                val distanceH = (strength / 100f) * maxDistanceH
+                                val distanceW = (strength / 100f) * maxDistanceW
+                                val angle = angles[network.ssid] ?: 0f
+                                val x = center.x + distanceW * cos(angle)
+                                val y = center.y + distanceH * sin(angle)
+
+                                val alpha = 1f - anim.progress
+                                val yOffset = -50 * anim.progress
+                                drawContext.canvas.nativeCanvas.apply {
+                                    drawText(
+                                        "+1",
+                                        x,
+                                        y + yOffset,
+                                        android.graphics.Paint().apply {
+                                            color = android.graphics.Color.argb(
+                                                (alpha * 255).toInt(),
+                                                0, 255, 0
+                                            )
+                                            textSize = 40.sp.toPx()
+                                            isFakeBoldText = true
+                                            textAlign = android.graphics.Paint.Align.CENTER
+                                        }
+                                    )
+                                }
                             }
                         }
 
