@@ -6,11 +6,11 @@ import android.content.Context
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.os.PowerManager
-import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -22,14 +22,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.minimap.data.preferences.SettingsRepository
 import com.example.minimap.model.PublicWifiDetector
-import com.example.minimap.model.PublicWifiKeywords
 import com.example.minimap.model.WifiClassifier
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiScannerViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -44,6 +43,10 @@ fun WifiScanScreen(context: Context, navController: NavController) {
 
     val viewModel: WifiScannerViewModel = viewModel()
     val context = LocalContext.current
+
+    // Repository variable for options
+    val settingsRepo = remember { SettingsRepository(context) }
+    val autoSaveEnabled by settingsRepo.autoSaveEnabledFlow.collectAsState(initial = false)
 
     // Initialize client location at launching
     LaunchedEffect(Unit) {
@@ -208,9 +211,9 @@ fun WifiScanScreen(context: Context, navController: NavController) {
                 newDiscoveredNetworks = trulyNewNetworks
             }
 
-
-            appendNewWifisToCsv(context, "wifis_dataset.csv", uniqueNetworks.values.toList())
-
+            if(autoSaveEnabled){
+                appendNewWifisToCsv(context, "wifis_dataset.csv", uniqueNetworks.values.toList())
+            }
 
 
             wifiNetworks.clear()

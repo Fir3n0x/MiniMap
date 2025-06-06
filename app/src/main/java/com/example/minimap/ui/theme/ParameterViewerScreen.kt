@@ -33,7 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
-// 1) Enum for tabs
+// Enum for tabs
 private enum class ParamTab(val label: String, val icon: @Composable () -> Unit) {
     Scan(
         label = "Scan",
@@ -49,7 +49,7 @@ private enum class ParamTab(val label: String, val icon: @Composable () -> Unit)
     )
 }
 
-// 2) Data class which represents an option with title, description and state
+// Data class which represents an option with title, description and state
 private data class ParamOption(
     val key: String,
     val title: String,
@@ -115,29 +115,31 @@ fun ParameterViewerScreen(navController: NavController) {
     }
 
 
-    // Instancier le SettingsRepository une seule fois
+    // Instance SettingsRepository one time
     val context = LocalContext.current
     val settingsRepo = remember { SettingsRepository(context) }
 
-    // On lit en Flow les préférences persistées pour AutoScan et Notifications
+    // Read in Flow, persisting preferences for AutoScan and Notifications
     val autoScanEnabledState by settingsRepo.autoScanEnabledFlow.collectAsState(initial = false)
     val notificationEnabledState by settingsRepo.notificationEnabledFlow.collectAsState(initial = false)
     val vibrationEnabledState by settingsRepo.vibrationEnabledFlow.collectAsState(initial = false)
+    val autoSaveEnabledState by settingsRepo.autoSaveEnabledFlow.collectAsState(initial = false)
 
-    // Pour planifier ou annuler le WorkManager
+    // Plan or remove  WorkManager
     val workManager = androidx.work.WorkManager.getInstance(context)
 
 
 
-    // 6) États locaux pour le reste des options qui ne sont pas persistées (maps clé → Boolean)
-    //    Ici, on persiste uniquement « saveResults », « silentMode », « showVersion », « enableLogs » en mémoire.
+    // Local states for the remaining options which are not persistent (maps key → Boolean)
+    // Persist only « saveResults », « silentMode », « showVersion », « enableLogs » in memory.
     val localOptionStates = remember {
         mutableStateMapOf<String, Boolean>().apply {
-            // Initialiser toutes les clés non gérées par DataStore à false
+            // Initialize all non-generated keys from Datastore to false
             (scanOptions + notificationOptions + aboutOptions).forEach { opt ->
                 if (opt.key != SettingsKeys.AUTO_SCAN_ENABLED.name &&
                     opt.key != SettingsKeys.NOTIFICATION_ENABLED.name &&
-                    opt.key != SettingsKeys.VIBRATION_ENABLED.name
+                    opt.key != SettingsKeys.VIBRATION_ENABLED.name &&
+                    opt.key != SettingsKeys.AUTO_SAVE_ENABLED.name
                 ) {
                     this[opt.key] = false
                 }
@@ -151,7 +153,7 @@ fun ParameterViewerScreen(navController: NavController) {
             .background(Color.Black)
     ) {
         // ────────────────────────────────────────────────────────
-        // A) Colonne de gauche : bouton « < » + onglets verticaux
+        // A) Left column : button « < » + vertical tabs
         // ────────────────────────────────────────────────────────
         Column(
             modifier = Modifier
@@ -161,7 +163,7 @@ fun ParameterViewerScreen(navController: NavController) {
                 .padding(top = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Bouton de retour vers Home
+            // Back home button
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -179,8 +181,8 @@ fun ParameterViewerScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Boucle sur les onglets (ParamTab.values()), format visuel et sélection
-            ParamTab.values().forEach { tab ->
+            // Loop on tabs (ParamTab.values()), visual format and selection
+            ParamTab.entries.forEach { tab ->
                 val isSelected = tab == selectedTab
                 Box(
                     modifier = Modifier
@@ -218,7 +220,7 @@ fun ParameterViewerScreen(navController: NavController) {
         }
 
         // ────────────────────────────────────────────────────────
-        // B) Colonne de droite : contenu dynamique selon l’onglet sélectionné
+        // B) Right column : dynamic content according to selected tab
         // ────────────────────────────────────────────────────────
         Box(
             modifier = Modifier
@@ -227,10 +229,10 @@ fun ParameterViewerScreen(navController: NavController) {
         ) {
             when (selectedTab) {
                 ParamTab.Scan -> {
-                    // ==== Onglet “Scan” ====
+                    // ==== Tab “Scan” ====
                     Column(modifier = Modifier.fillMaxSize()) {
                         Text(
-                            text = "Paramètres Scan",
+                            text = "Scan parameters",
                             color = Color.Green,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
@@ -247,11 +249,11 @@ fun ParameterViewerScreen(navController: NavController) {
                             Checkbox(
                                 checked = autoScanEnabledState,
                                 onCheckedChange = { checked ->
-                                    // Met à jour DataStore
+                                    // Update DataStore
                                     CoroutineScope(Dispatchers.IO).launch {
                                         settingsRepo.setAutoScanEnabled(checked)
                                     }
-                                    // Planifie ou annule le Work
+                                    // Plan or remove Work
                                     if (checked) {
                                         val request =
                                             PeriodicWorkRequestBuilder<WifiScanWorker>(
@@ -288,7 +290,8 @@ fun ParameterViewerScreen(navController: NavController) {
 
                         Divider(color = Color.DarkGray, thickness = 1.dp)
 
-                        // 2) Sauvegarder les résultats (état local)
+
+                        // 2) Auto save (local state)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
@@ -296,15 +299,12 @@ fun ParameterViewerScreen(navController: NavController) {
                                 .padding(vertical = 8.dp)
                         ) {
                             Checkbox(
-                                checked = localOptionStates[scanOptions[1].key] == true,
+                                checked = autoSaveEnabledState,
                                 onCheckedChange = { checked ->
-                                    localOptionStates[scanOptions[1].key] = checked
-                                },
-                                colors = CheckboxDefaults.colors(
-                                    checkmarkColor = Color.Black,
-                                    uncheckedColor = Color.Gray,
-                                    checkedColor = Color.Green
-                                )
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        settingsRepo.setAutoSaveEnabled(checked)
+                                    }
+                                }
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Column {
@@ -323,6 +323,8 @@ fun ParameterViewerScreen(navController: NavController) {
 
                         Divider(color = Color.DarkGray, thickness = 1.dp)
 
+
+                        // 3) Device vibration (local state)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
@@ -355,10 +357,10 @@ fun ParameterViewerScreen(navController: NavController) {
                 }
 
                 ParamTab.Notification -> {
-                    // ==== Onglet “Notification” ====
+                    // ==== Tab “Notification” ====
                     Column(modifier = Modifier.fillMaxSize()) {
                         Text(
-                            text = "Paramètres Notification",
+                            text = "Notification parameters",
                             color = Color.Green,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
@@ -375,7 +377,7 @@ fun ParameterViewerScreen(navController: NavController) {
                             Checkbox(
                                 checked = notificationEnabledState,
                                 onCheckedChange = { checked ->
-                                    // Met à jour DataStore
+                                    // Update DataStore
                                     CoroutineScope(Dispatchers.IO).launch {
                                         settingsRepo.setNotificationEnabled(checked)
                                     }
@@ -398,7 +400,7 @@ fun ParameterViewerScreen(navController: NavController) {
 
                         Divider(color = Color.DarkGray, thickness = 1.dp)
 
-                        // 2) Mode silencieux (état local)
+                        // 2) Silence mode (local state)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
@@ -434,17 +436,17 @@ fun ParameterViewerScreen(navController: NavController) {
                 }
 
                 ParamTab.About -> {
-                    // ==== Onglet “About” ====
+                    // ==== Tab “About” ====
                     Column(modifier = Modifier.fillMaxSize()) {
                         Text(
-                            text = "À propos",
+                            text = "About",
                             color = Color.Green,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
-                        // 1) Afficher la version (état local)
+                        // 1) Display version (local state)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
@@ -479,7 +481,7 @@ fun ParameterViewerScreen(navController: NavController) {
 
                         Divider(color = Color.DarkGray, thickness = 1.dp)
 
-                        // 2) Activer les logs (état local)
+                        // 2) Enable logs (local state)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier

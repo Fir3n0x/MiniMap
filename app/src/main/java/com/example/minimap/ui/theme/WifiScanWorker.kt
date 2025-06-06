@@ -66,14 +66,13 @@ class WifiScanWorker(
                 val scanResults: List<ScanResult> = wifiManager.scanResults
 
                 // 4) Filter non-safe networks
-                // Selon vos critères, « non sécurisé » = capabilités contiennent “[ESS]” sans “WPA”/“WPA2”/“WPA3”
+                // According to wifi_classifier.tflite file
                 val insecureNetworks = scanResults.filter { result ->
                     val caps = result.capabilities.uppercase()
-                    // Exemple simple : pas de « WEP » ni « WPA »
                     !(caps.contains("WPA") || caps.contains("WEP"))
                 }
 
-                // 5) Si au moins un réseau non sécurisé est trouvé ET si l’option « Notifications » est activée, envoyer une notif
+                // 5) If at least one non-secured wifi is found AND If "Notification" option is enabled, send notification
                 val notificationEnabled = settingsRepo.context.settingsDataStore.data
                     .map { prefs -> prefs[SettingsKeys.NOTIFICATION_ENABLED] ?: false }
                     .first()
