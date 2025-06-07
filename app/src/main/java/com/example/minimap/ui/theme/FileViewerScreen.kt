@@ -5,6 +5,9 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.DocumentsContract
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
@@ -25,12 +28,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -72,6 +77,8 @@ fun FileViewerScreen(navController: NavController) {
     var showWifiDeleteDialog by remember { mutableStateOf(false) }
     var wifiToDelete by remember { mutableStateOf<WifiNetworkInfo?>(null) }
     var showDeleteAllWifiDialog by remember { mutableStateOf(false) }
+
+    var showSaveCsvDialog by remember { mutableStateOf(false) }
 
     var searchQuery by remember { mutableStateOf("") }
 
@@ -315,7 +322,42 @@ fun FileViewerScreen(navController: NavController) {
     }
 
 
-
+    if (showSaveCsvDialog) {
+        AlertDialog(
+            onDismissRequest = { showSaveCsvDialog = false },
+            title = { Text("Save WiFi Data", color = Color.White) },
+            text = {
+                Column {
+                    Text("Do you want to save ${wifiNetworks.size} WiFi networks to a CSV file?")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("File will be saved as:", color = Color.Gray)
+                    Text("wifi_data_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.csv",
+                        color = Color.Green, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Default location: Downloads folder",
+                        color = Color.Gray, fontSize = 12.sp)
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSaveCsvDialog = false
+                        saveCsvFile(context, wifiNetworks)
+                    }
+                ) {
+                    Text("Save", color = Color.Green)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showSaveCsvDialog = false }
+                ) {
+                    Text("Cancel", color = Color.Red)
+                }
+            },
+            containerColor = Color.DarkGray
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         // Tabs
@@ -486,6 +528,22 @@ fun FileViewerScreen(navController: NavController) {
                         color = Color.Green,
                         modifier = Modifier.weight(1f)
                     )
+
+                    Spacer(modifier = Modifier.weight(0.1f))
+
+                    androidx.compose.material3.Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Add,
+                        contentDescription = "Save .csv file",
+                        tint = Color.Green,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                showSaveCsvDialog = true
+                            }
+                    )
+
+                    Spacer(modifier = Modifier.weight(0.1f))
+
                     androidx.compose.material3.Icon(
                         imageVector = androidx.compose.material.icons.Icons.Default.Delete,
                         contentDescription = "Delete All Wi-Fi",
@@ -709,5 +767,77 @@ private fun shareJsonFile(context: Context, file: File) {
     } catch (e: Exception) {
         Log.e("FileViewer", "Error sharing file: ${e.message}")
         Toast.makeText(context, "Error sharing file", Toast.LENGTH_SHORT).show()
+    }
+}
+
+private fun saveCsvFile(context: Context, wifiNetworks: List<WifiNetworkInfo>) {
+    try {
+        // Create csv content
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val csvContent = StringBuilder()
+
+        // Add header
+        csvContent.append("SSID;BSSID;RSSI;Frequency;Capabilities;Timestamp;SecurityLevel;Latitude;Longitude\n")
+
+        wifiNetworks.forEach { wifi ->
+            val formattedTime = sdf.format(Date(wifi.timestamp))
+            val line = listOf(
+                wifi.ssid,
+                wifi.bssid,
+                wifi.rssi.toString(),
+                wifi.frequency.toString(),
+                wifi.capabilities,
+                formattedTime,
+                wifi.label,
+                wifi.latitude.toString(),
+                wifi.longitude.toString()
+            ).joinToString(";")
+            csvContent.append("$line\n")
+        }
+
+        // Create temporary file
+        val tempFile = File.createTempFile(
+            "wifi_${System.currentTimeMillis()}",
+            ".csv",
+            context.cacheDir
+        ).apply {
+            writeText(csvContent.toString())
+        }
+
+        // Check if file is not empty
+        if (tempFile.length() == 0L) {
+            throw Exception("Generated CSV file is empty")
+        }
+
+        // Create intent to share the file
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            tempFile
+        )
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/csv"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, "WiFi Data Export")
+            putExtra(Intent.EXTRA_TITLE, "wifi_data_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.csv")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        // Start activity with selector
+        context.startActivity(
+            Intent.createChooser(
+                intent,
+                "Save WiFi Data As..."
+            )
+        )
+
+    } catch (e: Exception) {
+        Log.e("FileViewer", "Error saving CSV: ${e.message}")
+        Toast.makeText(
+            context,
+            "Error: ${e.message ?: "Failed to save file"}",
+            Toast.LENGTH_LONG
+        ).show()
     }
 }
