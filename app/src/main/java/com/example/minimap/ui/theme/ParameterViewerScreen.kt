@@ -85,11 +85,6 @@ fun ParameterViewerScreen(navController: NavController) {
             key = "pushNotifications",
             title = "Notifications Push",
             description = "Show a notification when a particular wifi is detected after \"Auto Scan\". Require \"Auto Scan\" to work."
-        ),
-        ParamOption(
-            key = "silentMode",
-            title = "Silent Mode",
-            description = "Disables sounds and vibrations during notifications."
         )
     )
     val aboutOptions = listOf(
@@ -97,23 +92,8 @@ fun ParameterViewerScreen(navController: NavController) {
             key = "showVersion",
             title = "Show current Version",
             description = "Shows the current version of the application on the main screen."
-        ),
-        ParamOption(
-            key = "enableLogs",
-            title = "Enable logs",
-            description = "Saves an extended history for debugging (reboot required)."
         )
     )
-
-    // Map to store checked state of each option (each key -> MutableState<Boolean>)
-    // Initialize every state as false
-    val checkboxStates = remember {
-        mutableStateMapOf<String, Boolean>().apply {
-            (scanOptions + notificationOptions + aboutOptions).forEach {
-                this[it.key] = false
-            }
-        }
-    }
 
 
     // Instance SettingsRepository one time
@@ -125,9 +105,7 @@ fun ParameterViewerScreen(navController: NavController) {
     val notificationEnabledState by settingsRepo.notificationEnabledFlow.collectAsState(initial = false)
     val vibrationEnabledState by settingsRepo.vibrationEnabledFlow.collectAsState(initial = false)
     val autoSaveEnabledState by settingsRepo.autoSaveEnabledFlow.collectAsState(initial = false)
-
-    // Plan or remove  WorkManager
-    val workManager = androidx.work.WorkManager.getInstance(context)
+    val showVersionEnabledState by settingsRepo.showVersionEnabledFlow.collectAsState(initial = false)
 
 
 
@@ -140,7 +118,8 @@ fun ParameterViewerScreen(navController: NavController) {
                 if (opt.key != SettingsKeys.AUTO_SCAN_ENABLED.name &&
                     opt.key != SettingsKeys.NOTIFICATION_ENABLED.name &&
                     opt.key != SettingsKeys.VIBRATION_ENABLED.name &&
-                    opt.key != SettingsKeys.AUTO_SAVE_ENABLED.name
+                    opt.key != SettingsKeys.AUTO_SAVE_ENABLED.name &&
+                    opt.key != SettingsKeys.SHOW_VERSION_ENABLED.name
                 ) {
                     this[opt.key] = false
                 }
@@ -381,46 +360,19 @@ fun ParameterViewerScreen(navController: NavController) {
                             }
                         }
 
-                        Divider(color = Color.DarkGray, thickness = 1.dp)
-
-                        // 2) Silence mode (local state)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                        ) {
-                            Checkbox(
-                                checked = localOptionStates[notificationOptions[1].key] == true,
-                                onCheckedChange = { checked ->
-                                    localOptionStates[notificationOptions[1].key] = checked
-                                },
-                                colors = CheckboxDefaults.colors(
-                                    checkmarkColor = Color.Black,
-                                    uncheckedColor = Color.Gray,
-                                    checkedColor = Color.Green
-                                )
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(
-                                    text = notificationOptions[1].title,
-                                    color = Color.White,
-                                    fontSize = 16.sp
-                                )
-                                Text(
-                                    text = notificationOptions[1].description,
-                                    color = Color.LightGray,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
                     }
                 }
 
                 ParamTab.About -> {
                     // ==== Tab “About” ====
+
+                    val packageInfo = LocalContext.current.packageManager
+                        .getPackageInfo(LocalContext.current.packageName, 0)
+
+                    val versionName = packageInfo.versionName
+
                     Column(modifier = Modifier.fillMaxSize()) {
+
                         Text(
                             text = "About",
                             color = Color.Green,
@@ -428,6 +380,21 @@ fun ParameterViewerScreen(navController: NavController) {
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
+
+                        Text(
+                            text = "MiniMap, a passive wifi scan application where you can analyse wifi network security around you and save your findings in local.\n" +
+                                    "You are currently using MiniMap v$versionName.",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Justify,
+                            modifier = Modifier
+                                .padding(bottom = 16.dp)
+                                .fillMaxWidth()
+                        )
+
+
+
+                        Divider(color = Color.DarkGray, thickness = 1.dp)
 
                         // 1) Display version (local state)
                         Row(
@@ -437,15 +404,13 @@ fun ParameterViewerScreen(navController: NavController) {
                                 .padding(vertical = 8.dp)
                         ) {
                             Checkbox(
-                                checked = localOptionStates[aboutOptions[0].key] == true,
+                                checked = showVersionEnabledState,
                                 onCheckedChange = { checked ->
-                                    localOptionStates[aboutOptions[0].key] = checked
-                                },
-                                colors = CheckboxDefaults.colors(
-                                    checkmarkColor = Color.Black,
-                                    uncheckedColor = Color.Gray,
-                                    checkedColor = Color.Green
-                                )
+                                    // Update DataStore
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        settingsRepo.setShowVersionEnabled(checked)
+                                    }
+                                }
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Column {
@@ -461,99 +426,8 @@ fun ParameterViewerScreen(navController: NavController) {
                                 )
                             }
                         }
-
-                        Divider(color = Color.DarkGray, thickness = 1.dp)
-
-                        // 2) Enable logs (local state)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                        ) {
-                            Checkbox(
-                                checked = localOptionStates[aboutOptions[1].key] == true,
-                                onCheckedChange = { checked ->
-                                    localOptionStates[aboutOptions[1].key] = checked
-                                },
-                                colors = CheckboxDefaults.colors(
-                                    checkmarkColor = Color.Black,
-                                    uncheckedColor = Color.Gray,
-                                    checkedColor = Color.Green
-                                )
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(
-                                    text = aboutOptions[1].title,
-                                    color = Color.White,
-                                    fontSize = 16.sp
-                                )
-                                Text(
-                                    text = aboutOptions[1].description,
-                                    color = Color.LightGray,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
                     }
                 }
-            }
-        }
-    }
-}
-
-/**
- * Reusable composable to display a list of options checkbox with description.
- *
- * @param options         List of ParamOption (each option has a key, title and description).
- * @param checkboxStates  Shared map where each key (ParamOption.key)   Boolean indicates the status checked.
- */
-@Composable
-private fun TabContent(
-    options: List<ParamOption>,
-    checkboxStates: SnapshotStateMap<String, Boolean>
-) {
-    // If long list, we can scroll down thanks to LazyColumn
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(options) { option ->
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Checkbox (state read from checkboxStates)
-                    Checkbox(
-                        checked = checkboxStates[option.key] == true,
-                        onCheckedChange = { checked ->
-                            checkboxStates[option.key] = checked
-                        },
-                        colors = CheckboxDefaults.colors(
-                            checkmarkColor = Color.Black,
-                            uncheckedColor = Color.Gray,
-                            checkedColor = Color.Green
-                        )
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // Option title
-                    Text(
-                        text = option.title,
-                        color = Color.White,
-                        fontFamily = autowide,
-                        fontSize = 16.sp
-                    )
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                // Color gray for description
-                Text(
-                    text = option.description,
-                    color = Color.LightGray,
-                    fontSize = 12.sp,
-                    fontFamily = autowide,
-                    modifier = Modifier.padding(start = 40.dp) // Align under text, not under checkbox
-                )
             }
         }
     }

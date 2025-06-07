@@ -15,6 +15,7 @@ object SettingsKeys {
     val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
     val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
     val AUTO_SAVE_ENABLED = booleanPreferencesKey("auto_save_enabled")
+    val SHOW_VERSION_ENABLED = booleanPreferencesKey("show_version_enabled")
 }
 
 class SettingsRepository(val context: Context) {
@@ -31,6 +32,9 @@ class SettingsRepository(val context: Context) {
 
     val autoSaveEnabledFlow: Flow<Boolean> = context.settingsDataStore.data
         .map { prefs -> prefs[SettingsKeys.AUTO_SAVE_ENABLED] ?: false}
+
+    val showVersionEnabledFlow: Flow<Boolean> = context.settingsDataStore.data
+        .map { prefs -> prefs[SettingsKeys.SHOW_VERSION_ENABLED] ?: false}
 
     // Function to change autoScan state
     suspend fun setAutoScanEnabled(isEnabled: Boolean) {
@@ -57,6 +61,13 @@ class SettingsRepository(val context: Context) {
     suspend fun setAutoSaveEnabled(isEnabled: Boolean) {
         context.settingsDataStore.edit { prefs ->
             prefs[SettingsKeys.AUTO_SAVE_ENABLED] = isEnabled
+        }
+    }
+
+    // Function to change show version state
+    suspend fun setShowVersionEnabled(isEnabled: Boolean) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[SettingsKeys.SHOW_VERSION_ENABLED] = isEnabled
         }
     }
 }

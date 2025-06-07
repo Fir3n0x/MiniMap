@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.minimap.autowide
+import com.example.minimap.data.preferences.SettingsRepository
 import com.example.minimap.model.Screen
 import kotlinx.coroutines.delay
 
@@ -62,6 +64,8 @@ fun HomeScreen(navController: NavController) {
     var showUserInfo by remember { mutableStateOf(false) }
     var showScanButton by remember { mutableStateOf(false) }
     var showBottomButtons by remember { mutableStateOf(false) }
+
+    val showVersionEnabledState by SettingsRepository(LocalContext.current).showVersionEnabledFlow.collectAsState(initial = false)
 
     LaunchedEffect(Unit) {
         if (AppState.isFirstLaunch) {
@@ -113,7 +117,8 @@ fun HomeScreen(navController: NavController) {
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.TopCenter)
         ) {
-            TerminalTitle(animate = AppState.isFirstLaunch)
+            TerminalTitle(animate = AppState.isFirstLaunch,
+                showVersion = showVersionEnabledState)
         }
 
         // User info with WiFi circles
@@ -213,13 +218,19 @@ private fun ScanButton(navController: NavController) {
 
 
 @Composable
-private fun TerminalTitle(animate: Boolean = true) {
+private fun TerminalTitle(animate: Boolean = true, showVersion: Boolean = false) {
     var showCursor by remember { mutableStateOf(false) }
     var textToDisplay by remember { mutableStateOf(if (animate) "" else "MINIMAP") }
     var showPrefix by remember { mutableStateOf(animate) }
     val fullText = "MINIMAP"
     val prefix = "$> "
     var animationComplete by remember { mutableStateOf(!animate) }
+
+
+    // Retrieve current application version
+    val packageInfo = LocalContext.current.packageManager
+        .getPackageInfo(LocalContext.current.packageName, 0)
+    val versionName = packageInfo.versionName ?: "N/A"
 
     LaunchedEffect(animate) {
         if (animate) {
@@ -279,6 +290,18 @@ private fun TerminalTitle(animate: Boolean = true) {
                     )
                 }
             }
+
+        }
+
+        // Display version if showVersion is true
+        if (showVersion) {
+            Text(
+                text = "v$versionName",
+                color = Color.Green.copy(alpha = 0.7f),
+                fontFamily = autowide,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 4.dp)
+            )
         }
     }
 }

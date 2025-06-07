@@ -67,7 +67,7 @@ class WifiScanWorker(
             // 5. Launch scan
             updateForegroundNotification("Scanning networks...")
             val success = wifiManager.startScan()
-            if (!success) return Result.success()
+            if (!success) return Result.retry()
 
             // 6. Handle results
             val scanResults = wifiManager.scanResults ?: return Result.retry()
