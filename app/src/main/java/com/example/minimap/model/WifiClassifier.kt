@@ -1,7 +1,9 @@
 package com.example.minimap.model
 
 import android.content.Context
+import android.net.wifi.ScanResult
 import android.util.Log
+import androidx.compose.runtime.Composable
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
 import java.nio.MappedByteBuffer
@@ -42,4 +44,38 @@ class WifiClassifier(context: Context) {
             else -> WifiSecurityLevel.DANGEROUS
         }
     }
+
+
+    // Function to retrieve features from a ScanResult
+    fun extractFeatures(scan: ScanResult, context: Context): FloatArray {
+        val caps = scan.capabilities.lowercase()
+
+        return floatArrayOf(
+            // is_open
+            if (caps.contains("ess") && !(caps.contains("wpa") || caps.contains("rsn"))) 1f else 0f,
+            // uses_wep
+            if (caps.contains("wep")) 1f else 0f,
+            // uses_wpa
+            if (caps.contains("tkip")) 1f else 0f,
+            // uses_wpa2_ccmp
+            if (caps.contains("wpa2") && caps.contains("ccmp")) 1f else 0f,
+            // uses_wpa3
+            if (caps.contains("sae")) 1f else 0f,
+            // wps_enabled
+            if (caps.contains("wps")) 1f else 0f,
+            // rssi_class
+            when {
+                scan.level >= -60 -> 0f  // High
+                scan.level <= -80 -> 2f  // Low
+                else -> 1f               // Medium
+            },
+            // is_5ghz
+            if (scan.frequency > 4000) 1f else 0f,
+            // is_hidden
+            if (scan.SSID.matches(Regex(".*[0-9A-Fa-f]{4}$"))) 1f else 0f,
+            // is_public
+            if (PublicWifiDetector.isPublicWifi(scan.SSID, context)) 1f else 0f
+        )
+    }
 }
+

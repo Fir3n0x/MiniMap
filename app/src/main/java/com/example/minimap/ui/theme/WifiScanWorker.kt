@@ -7,16 +7,21 @@ import android.content.Context
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.os.Build
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.first
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
-import com.example.minimap.data.preferences.SettingsKeys
+import com.example.minimap.R
 import com.example.minimap.data.preferences.SettingsRepository
-import com.example.minimap.data.preferences.settingsDataStore
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.example.minimap.model.WifiClassifier
+import com.example.minimap.model.WifiNetworkInfo
+import com.example.minimap.model.WifiScannerViewModel
+import com.example.minimap.model.WifiSecurityLevel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class WifiScanWorker(
     private val context: Context,
@@ -25,102 +30,191 @@ class WifiScanWorker(
 
     companion object {
         private const val CHANNEL_ID = "wifi_alerts_channel"
-        private const val CHANNEL_NAME = "WiFi Alerts"
+        private const val FOREGROUND_CHANNEL_ID = "wifi_scan_foreground_channel"
         private const val NOTIF_ID = 1001
+        private const val FOREGROUND_NOTIF_ID = 1002
     }
+
+
 
     @SuppressLint("MissingPermission", "ServiceCast")
     override suspend fun doWork(): Result {
-        // 1) Load Preferences Repo
-        val settingsRepo = SettingsRepository(context)
 
-        // 2) Check if option "Auto Scan" is still activated
-        val autoScanEnabled = settingsRepo.context.settingsDataStore.data
-            .map { prefs -> prefs[SettingsKeys.AUTO_SCAN_ENABLED] ?: false }
-            .first()
+        // 1. Configure notification channels
+        createNotificationChannels()
 
-        if (!autoScanEnabled) {
-            // If AutoScan is disabled, stop Worker (Result success to not retry)
-            return Result.success()
+        // 2. Start in foreground service if Android 10+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            setForeground(createForegroundInfo("Starting WiFi scan..."))
         }
 
-        // 3) Launch Wifi scan and retrieve results
-        return withContext(Dispatchers.IO) {
-            try {
-                val wifiManager =
-                    context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        return try {
+            // 3. Retrieve preferences
+            val settingsRepo = SettingsRepository(context)
+            val autoScanEnabled = settingsRepo.autoScanEnabledFlow.first()
+            val notificationEnabled = settingsRepo.notificationEnabledFlow.first()
+            val autoSaveEnabled = settingsRepo.autoSaveEnabledFlow.first()
 
-                // Need ACCESS_FINE_LOCATION permission
-                if (!wifiManager.isWifiEnabled) {
-                    // Activer le Wi-Fi si besoin (ou retourner success si on ne veut pas forcer l'activation)
-                    // wifiManager.isWifiEnabled = true // attention : cela peut demander une action utilisateur sous API>29
-                }
+            if (!autoScanEnabled) return Result.success()
 
-                val success = wifiManager.startScan()
-                // If scan does not launch, still send success
-                if (!success) {
-                    return@withContext Result.success()
-                }
-
-                // Retrieve results in final scan
-                val scanResults: List<ScanResult> = wifiManager.scanResults
-
-                // 4) Filter non-safe networks
-                // According to wifi_classifier.tflite file
-                val insecureNetworks = scanResults.filter { result ->
-                    val caps = result.capabilities.uppercase()
-                    !(caps.contains("WPA") || caps.contains("WEP"))
-                }
-
-                // 5) If at least one non-secured wifi is found AND If "Notification" option is enabled, send notification
-                val notificationEnabled = settingsRepo.context.settingsDataStore.data
-                    .map { prefs -> prefs[SettingsKeys.NOTIFICATION_ENABLED] ?: false }
-                    .first()
-
-                if (insecureNetworks.isNotEmpty() && notificationEnabled) {
-                    sendNotification(insecureNetworks.size)
-                }
-
-                Result.success()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Result.retry()
+            // 4. Initialize wifi
+            val wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            if (!wifiManager.isWifiEnabled && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                wifiManager.isWifiEnabled = true
+                delay(2000)
             }
+
+            // 5. Launch scan
+            updateForegroundNotification("Scanning networks...")
+            val success = wifiManager.startScan()
+            if (!success) return Result.success()
+
+            // 6. Handle results
+            val scanResults = wifiManager.scanResults ?: return Result.retry()
+            val networks = processScanResults(scanResults)
+
+            // 7. Save if enabled
+            if (autoSaveEnabled) {
+                updateForegroundNotification("Saving results...")
+                saveNewNetworks(networks)
+            }
+
+            // 8. Notify if necessary
+            val insecureNetworks = networks.filter { isNetworkInsecure(it) }
+            if (insecureNetworks.isNotEmpty() && notificationEnabled) {
+                sendAlertNotification(insecureNetworks)
+            }
+
+            Result.success()
+        } catch (e: Exception) {
+            Result.retry()
         }
     }
 
-    /**
-     * Builds and sends a summary notification to report the unsecured network(s).
-     * You can customize the style or text (for example, list SSIDs).
-     */
-    private fun sendNotification(countInsecure: Int) {
-        val notifManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        // 1) Create channel if necessary
+    private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val existing = notifManager.getNotificationChannel(CHANNEL_ID)
-            if (existing == null) {
-                val channel = NotificationChannel(
-                    CHANNEL_ID,
-                    CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_DEFAULT
-                ).apply {
-                    description = "Alertes pour réseaux Wi-Fi non sécurisés"
-                }
-                notifManager.createNotificationChannel(channel)
+            // Canal pour les alertes
+            val alertChannel = NotificationChannel(
+                CHANNEL_ID,
+                "WiFi Security Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Alerts for insecure WiFi networks"
             }
+
+            // Canal pour le foreground service
+            val foregroundChannel = NotificationChannel(
+                FOREGROUND_CHANNEL_ID,
+                "WiFi Scan Service",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Background WiFi scanning service"
+            }
+
+            val notificationManager = context.getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(alertChannel)
+            notificationManager.createNotificationChannel(foregroundChannel)
+        }
+    }
+
+    private fun createForegroundInfo(progressText: String): ForegroundInfo {
+        val notification = NotificationCompat.Builder(context, FOREGROUND_CHANNEL_ID)
+            .setContentTitle("WiFi Security Scan")
+            .setContentText(progressText)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .build()
+
+        return ForegroundInfo(FOREGROUND_NOTIF_ID, notification)
+    }
+
+    private suspend fun updateForegroundNotification(text: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            setForeground(createForegroundInfo(text))
+        }
+    }
+
+    private fun processScanResults(results: List<ScanResult>): List<WifiNetworkInfo> {
+
+        // Initialize classifier
+        val wifiClassifier = WifiClassifier(context)
+        val viewModel = WifiScannerViewModel()
+
+        // GPS location
+        var currentLatitude = 0.0
+        var currentLongitude = 0.0
+
+
+
+        return results.mapNotNull { result ->
+            val ssid = result.SSID.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+
+            viewModel.fetchLastLocation { location ->
+                currentLatitude = location.latitude
+                currentLongitude = location.longitude
+            }
+
+            val features = wifiClassifier.extractFeatures(result,context)
+            val securityLevel = wifiClassifier.predictSecurityLevel(features)
+
+            WifiNetworkInfo(
+                ssid = ssid,
+                bssid = result.BSSID,
+                rssi = result.level,
+                frequency = result.frequency,
+                capabilities = result.capabilities,
+                timestamp = System.currentTimeMillis(),
+                label = securityLevel,
+                timestampFormatted = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                    .format(Date()),
+                latitude = currentLatitude,
+                longitude = currentLongitude
+            )
+        }.distinctBy { "${it.ssid}:${it.bssid}" }
+    }
+
+    private fun isNetworkInsecure(network: WifiNetworkInfo): Boolean {
+        return network.label.toString() == WifiSecurityLevel.DANGEROUS.toString()
+    }
+
+    private fun saveNewNetworks(networks: List<WifiNetworkInfo>) {
+        val knownNetworks = readWifiNetworksFromCsv(context, "wifis_dataset.csv")
+        val knownKeys = knownNetworks.map { "${it.ssid}:${it.bssid}" }.toSet()
+
+        val newNetworks = networks.filterNot {
+            knownKeys.contains("${it.ssid}:${it.bssid}")
         }
 
-        // 2) Build notification
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_warning)
-            .setContentTitle("Réseau Wi-Fi non sécurisé détecté")
-            .setContentText("$countInsecure réseau(s) en accès libre trouvé(s).")
-            .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        if (newNetworks.isNotEmpty()) {
+            appendNewWifisToCsv(context, "wifis_dataset.csv", newNetworks)
+        }
+    }
 
-        // 3) display notification
-        notifManager.notify(NOTIF_ID, builder.build())
+    private fun sendAlertNotification(networks: List<WifiNetworkInfo>) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        // Style Inbox
+        val inboxStyle = NotificationCompat.InboxStyle()
+            .setBigContentTitle("${networks.size} insecure networks found")
+
+        networks.take(5).forEach {
+            inboxStyle.addLine("${it.ssid} (${it.label})")
+        }
+        if (networks.size > 5) {
+            inboxStyle.addLine("... and ${networks.size - 5} more")
+        }
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Insecure WiFi Detected")
+            .setContentText("${networks.size} insecure networks found")
+            .setStyle(inboxStyle) // Utiliser le style configuré
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        notificationManager.notify(NOTIF_ID, notification)
     }
 }

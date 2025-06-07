@@ -3,7 +3,6 @@ package com.example.minimap.ui.theme
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.os.PowerManager
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,7 +22,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.minimap.data.preferences.SettingsRepository
-import com.example.minimap.model.PublicWifiDetector
 import com.example.minimap.model.WifiClassifier
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiScannerViewModel
@@ -129,7 +127,7 @@ fun WifiScanScreen(context: Context, navController: NavController) {
             for(result in results){
 
                 //Retrieve features
-                val features = extractFeatures(result, context)
+                val features = wifiClassifier.extractFeatures(result, context)
 
                 //Predict security level with model
                 val securityLevel = wifiClassifier.predictSecurityLevel(features)
@@ -243,37 +241,4 @@ fun WifiScanPreview() {
     var isRunning: Boolean = true
 
     WifiRadarDetection(navController = rememberNavController(), networks = mockNetworks, newNetworks = newDiscoveredNetworks, isRunning = isRunning, onToggleRunning = {isRunning = !isRunning}, modifier = Modifier.fillMaxSize())
-}
-
-
-// Function to retrieve features from a ScanResult
-private fun extractFeatures(scan: ScanResult, context: Context): FloatArray {
-    val caps = scan.capabilities.lowercase()
-
-    return floatArrayOf(
-        // is_open
-        if (caps.contains("ess") && !(caps.contains("wpa") || caps.contains("rsn"))) 1f else 0f,
-        // uses_wep
-        if (caps.contains("wep")) 1f else 0f,
-        // uses_wpa
-        if (caps.contains("tkip")) 1f else 0f,
-        // uses_wpa2_ccmp
-        if (caps.contains("wpa2") && caps.contains("ccmp")) 1f else 0f,
-        // uses_wpa3
-        if (caps.contains("sae")) 1f else 0f,
-        // wps_enabled
-        if (caps.contains("wps")) 1f else 0f,
-        // rssi_class
-        when {
-            scan.level >= -60 -> 0f  // High
-            scan.level <= -80 -> 2f  // Low
-            else -> 1f               // Medium
-        },
-        // is_5ghz
-        if (scan.frequency > 4000) 1f else 0f,
-        // is_hidden
-        if (scan.SSID.matches(Regex(".*[0-9A-Fa-f]{4}$"))) 1f else 0f,
-        // is_public
-        if (PublicWifiDetector.isPublicWifi(scan.SSID, context)) 1f else 0f
-    )
 }

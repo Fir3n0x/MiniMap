@@ -28,6 +28,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import com.example.minimap.autowide
 import com.example.minimap.data.preferences.SettingsKeys
 import com.example.minimap.data.preferences.SettingsRepository
+import com.example.minimap.model.WorkerManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -249,27 +250,9 @@ fun ParameterViewerScreen(navController: NavController) {
                             Checkbox(
                                 checked = autoScanEnabledState,
                                 onCheckedChange = { checked ->
-                                    // Update DataStore
                                     CoroutineScope(Dispatchers.IO).launch {
                                         settingsRepo.setAutoScanEnabled(checked)
-                                    }
-                                    // Plan or remove Work
-                                    if (checked) {
-                                        val request =
-                                            PeriodicWorkRequestBuilder<WifiScanWorker>(
-                                                /* repeatInterval= */ 20,
-                                                TimeUnit.MINUTES
-                                            )
-                                                .setInitialDelay(0, TimeUnit.MINUTES)
-                                                .addTag("wifi_auto_scan")
-                                                .build()
-                                        workManager.enqueueUniquePeriodicWork(
-                                            "WifiAutoScanWork",
-                                            ExistingPeriodicWorkPolicy.REPLACE,
-                                            request
-                                        )
-                                    } else {
-                                        workManager.cancelAllWorkByTag("wifi_auto_scan")
+                                        WorkerManager.scheduleWifiScan(context, checked)
                                     }
                                 }
                             )
