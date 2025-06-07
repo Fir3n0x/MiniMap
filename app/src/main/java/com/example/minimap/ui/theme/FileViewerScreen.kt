@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -43,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.example.minimap.autowide
 import com.example.minimap.model.WifiNetworkInfo
@@ -400,6 +403,7 @@ fun FileViewerScreen(navController: NavController) {
 
                     items(filteredFiles) { file ->
                         FileItem(
+                            file = file,
                             fileName = file.name,
                             onClick = {
                                 try {
@@ -413,6 +417,9 @@ fun FileViewerScreen(navController: NavController) {
                             onDelete = {
                                 fileToDelete = file
                                 showDeleteDialog = true
+                            },
+                            onShare = {
+                                shareJsonFile(context, file)
                             }
                         )
                     }
@@ -519,7 +526,7 @@ fun FileViewerScreen(navController: NavController) {
 }
 
 @Composable
-fun FileItem(fileName: String, onClick: () -> Unit, onDelete: () -> Unit) {
+fun FileItem(file: File, fileName: String, onClick: () -> Unit, onDelete: () -> Unit, onShare: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -529,13 +536,36 @@ fun FileItem(fileName: String, onClick: () -> Unit, onDelete: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = fileName,
-            color = Color.White,
-            fontFamily = autowide,
-            fontSize = 16.sp,
-            modifier = Modifier.clickable { onClick() }
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .horizontalScroll(rememberScrollState())
+        ) {
+            Text(
+                text = fileName,
+                color = Color.White,
+                fontFamily = autowide,
+                fontSize = 16.sp,
+                modifier = Modifier.clickable { onClick() }
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(0.1f))
+
+        // Share button
+        androidx.compose.material3.Icon(
+            imageVector = androidx.compose.material.icons.Icons.Default.Share,
+            contentDescription = "Share",
+            tint = Color.Green,
+            modifier = Modifier
+                .size(24.dp)
+                .clickable {
+                    onShare()
+                }
         )
+
+        Spacer(modifier = Modifier.weight(0.1f))
 
         // Deleting button
         androidx.compose.material3.Icon(
@@ -600,7 +630,7 @@ fun WifiItem(wifi: WifiNetworkInfo, onDelete: () -> Unit, onLocationClick: () ->
 
 
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(0.2f))
 
 
             // Browse Location button
@@ -655,9 +685,29 @@ private fun openGoogleMaps(context: Context, wifi: WifiNetworkInfo) {
         intent.setPackage("com.google.android.apps.maps")
         context.startActivity(intent)
     } catch (e: ActivityNotFoundException) {
-        // Si Google Maps n'est pas installé, ouvrir avec un autre viewer
+        // If Google Maps is not installed, open other viewer
         val uri = "geo:${wifi.latitude},${wifi.longitude}?q=${wifi.latitude},${wifi.longitude}(${wifi.ssid})&z=17"
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
         context.startActivity(intent)
+    }
+}
+
+
+private fun shareJsonFile(context: Context, file: File) {
+    try {
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            file
+        )
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/json"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Share WiFi File"))
+    } catch (e: Exception) {
+        Log.e("FileViewer", "Error sharing file: ${e.message}")
+        Toast.makeText(context, "Error sharing file", Toast.LENGTH_SHORT).show()
     }
 }
