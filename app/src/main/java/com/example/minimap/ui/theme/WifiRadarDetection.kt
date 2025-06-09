@@ -527,7 +527,7 @@ fun WifiRadarDetection(
                                 ) {
                                     Text("BSSID : ${network.bssid}", color = Color.LightGray)
                                     Text("Capabilities : ${network.capabilities}", color = Color.LightGray)
-                                    Text("Frequency : ${network.frequency} MHz", color = Color.LightGray)
+                                    Text("Frequency : ${network.frequency} GHz", color = Color.LightGray)
 
                                     val bootTime = System.currentTimeMillis() - SystemClock.elapsedRealtime()
                                     val scanTimeMillis = bootTime + (network.timestamp / 1000L)
