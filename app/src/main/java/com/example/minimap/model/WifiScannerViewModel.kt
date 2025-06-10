@@ -7,6 +7,10 @@ import androidx.lifecycle.ViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 
+
+// File to get Phone's Location in order to retrieve latitude and longitude
+
+
 class WifiScannerViewModel : ViewModel() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var currentLocation: Location? = null

@@ -52,6 +52,9 @@ import com.example.minimap.model.Screen
 import kotlinx.coroutines.delay
 
 
+// File to handle home screen, the application home
+
+
 object AppState {
     var isFirstLaunch by mutableStateOf(true)
 }

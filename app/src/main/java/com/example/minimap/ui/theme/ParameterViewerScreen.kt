@@ -34,6 +34,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
+
+// File to handle parameter screen
+
 // Enum for tabs
 private enum class ParamTab(val label: String, val icon: @Composable () -> Unit) {
     Scan(
@@ -67,7 +70,7 @@ fun ParameterViewerScreen(navController: NavController) {
         ParamOption(
             key = "autoScan",
             title = "Auto Scan",
-            description = "Automatically scans networks each 30 minutes when the application is closed"
+            description = "Automatically scans networks each 15 minutes when the application is closed"
         ),
         ParamOption(
             key = "saveResults",

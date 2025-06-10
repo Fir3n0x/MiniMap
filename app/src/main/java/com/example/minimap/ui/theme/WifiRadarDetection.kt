@@ -63,6 +63,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 
+// File to handle Radar Detection animation and UI
+
+
 @Composable
 fun WifiRadarDetection(
     navController: NavController,
@@ -429,7 +432,6 @@ fun WifiRadarDetection(
             )
 
             Spacer(modifier = Modifier.height(listHeight + 20.dp))
-//            Spacer(modifier = Modifier.weight(0.2f))  // Takes remaining 40% of space
         }
 
 

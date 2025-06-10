@@ -9,6 +9,10 @@ import java.io.FileInputStream
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 
+
+// File to load the model to classify wifi
+
+
 class WifiClassifier(context: Context) {
 
     private val interpreter: Interpreter by lazy {

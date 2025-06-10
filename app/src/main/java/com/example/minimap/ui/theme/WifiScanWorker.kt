@@ -23,6 +23,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+
+// File to handle notification process related to periodic scan when the applicaiton is closed
+
+
+
 class WifiScanWorker(
     private val context: Context,
     workerParams: WorkerParameters
@@ -93,7 +98,7 @@ class WifiScanWorker(
 
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Canal pour les alertes
+            // Alert channel
             val alertChannel = NotificationChannel(
                 CHANNEL_ID,
                 "WiFi Security Alerts",
@@ -102,7 +107,7 @@ class WifiScanWorker(
                 description = "Alerts for insecure WiFi networks"
             }
 
-            // Canal pour le foreground service
+            // Foreground service channel
             val foregroundChannel = NotificationChannel(
                 FOREGROUND_CHANNEL_ID,
                 "WiFi Scan Service",

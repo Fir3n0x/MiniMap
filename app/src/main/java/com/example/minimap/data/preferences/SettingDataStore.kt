@@ -7,6 +7,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+// File to set persistent value in order to remember enabled or disabled options in the application
+
 // Create DataStore “settingsDataStore” linked to Context
 val Context.settingsDataStore by preferencesDataStore(name = "settings_prefs")
 
@@ -50,7 +52,7 @@ class SettingsRepository(val context: Context) {
         }
     }
 
-    // Function to change device virbration state
+    // Function to change device vibration state
     suspend fun setVibrationEnabled(isEnabled: Boolean) {
         context.settingsDataStore.edit { prefs ->
             prefs[SettingsKeys.VIBRATION_ENABLED] = isEnabled

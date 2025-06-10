@@ -9,6 +9,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+
+// File to handle the .csv file, including reading, writing and extracting information as WifiNetwork
+
+
 fun readKnownWifiKeys(context: Context, fileName: String): MutableSet<String> {
     val file = File(context.filesDir, fileName)
     val knownKeys = mutableSetOf<String>()

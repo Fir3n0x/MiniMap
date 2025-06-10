@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import java.io.IOException
 
+// File to generate different public ssid wifi name to detect if an ssid is public
+
 object PublicWifiKeywords {
     private var keywords: List<String>? = null
 

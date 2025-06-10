@@ -2,6 +2,10 @@ package com.example.minimap.model
 
 import androidx.compose.ui.graphics.Color
 
+
+// File to handle different security level in order to classify wifi with machine learning /assets/wifi_classifier.tflite
+
+
 enum class WifiSecurityLevel {
     SAFE, MEDIUM, DANGEROUS;
 

@@ -22,6 +22,10 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.FileOutputStream
 
+
+// File to export the scan as json (option on the top right corner of scan screen)
+
+
 @Composable
 fun ExportDialog(
     networks: List<WifiNetworkInfo>,

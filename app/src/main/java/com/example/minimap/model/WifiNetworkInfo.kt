@@ -2,6 +2,8 @@ package com.example.minimap.model
 
 import kotlinx.serialization.Serializable
 
+// File including the data class WifiNetworkInfo
+
 @Serializable
 data class WifiNetworkInfo (
     val ssid : String,

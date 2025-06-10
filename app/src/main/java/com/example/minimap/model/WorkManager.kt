@@ -9,6 +9,8 @@ import androidx.work.WorkManager
 import com.example.minimap.ui.theme.WifiScanWorker
 import java.util.concurrent.TimeUnit
 
+// File to centralize the periodic scan of the application
+
 object WorkerManager {
     fun scheduleWifiScan(context: Context, enable: Boolean) {
         val workManager = WorkManager.getInstance(context)

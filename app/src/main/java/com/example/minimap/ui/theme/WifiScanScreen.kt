@@ -33,6 +33,10 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 
+
+// File to handle logic implementation of Radar Detection Screen
+
+
 @OptIn(ExperimentalPermissionsApi::class)
 @SuppressLint("MissingPermission", "ServiceCast")
 @Composable
@@ -78,7 +82,6 @@ fun WifiScanScreen(context: Context, navController: NavController) {
 
 
     val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-//    val wifiNetworks = remember { mutableStateMapOf<String, WifiNetwork>() }
     val wifiNetworks = remember { mutableStateListOf<WifiNetworkInfo>() }
 
 
@@ -92,7 +95,7 @@ fun WifiScanScreen(context: Context, navController: NavController) {
     // Initialize classifier
     val wifiClassifier = remember { WifiClassifier(context) }
 
-    // Ajoutez cette variable pour suivre les nouveaux réseaux
+    // Variable to handle new observed wifi network
     var newDiscoveredNetworks by remember { mutableStateOf<List<WifiNetworkInfo>>(emptyList()) }
 
 
@@ -222,7 +225,6 @@ fun WifiScanScreen(context: Context, navController: NavController) {
         }
     }
 
-//    WifiRadarView(networks = wifiNetworks.values.toList(), modifier = Modifier.fillMaxSize())
     WifiRadarDetection(navController = navController, networks = wifiNetworks.toList(), newNetworks = newDiscoveredNetworks, isRunning = isRunning, onToggleRunning = {isRunning = !isRunning}, modifier = Modifier.fillMaxSize())
 }
 

@@ -51,6 +51,9 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 
+// File to handle the main Activity of the application and launching the correct screen at launching
+
+
 val autowide = FontFamily(
     Font(R.font.audiowide_regular, FontWeight.Normal)
 )
@@ -142,28 +145,6 @@ class MainActivity : ComponentActivity() {
         }.toTypedArray()
 
         requestPermissionLauncher.launch(permissions)
-    }
-}
-
-
-
-@Composable
-fun TerminalButton(text: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF003300), RoundedCornerShape(8.dp))
-            .clickable { onClick() }
-            .padding(16.dp)
-    ) {
-        Text(
-            text = text,
-            color = Color(0xFF00FF00),
-            fontFamily = autowide,
-            fontSize = 18.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 
