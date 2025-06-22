@@ -16,12 +16,17 @@ android {
     }
 
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
+
     defaultConfig {
         applicationId = "com.example.minimap"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "2.17.2"
+        versionName = "2.17.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -76,4 +81,20 @@ dependencies {
     implementation(libs.tensorflow.lite)
     implementation(libs.tensorflow.lite.support)
     implementation(libs.play.services.location)
+    implementation(libs.play.services.location.v2101)
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Unit test
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.kotlinx.coroutines.test)
+
+    // Instrumented test
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core.v351)
+    androidTestImplementation(libs.ui.test.junit4)
+    androidTestImplementation(libs.androidx.navigation.testing.v275)
+    androidTestImplementation(libs.kotlinx.coroutines.test.v164)
 }
