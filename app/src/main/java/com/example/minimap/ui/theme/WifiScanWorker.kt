@@ -40,7 +40,8 @@ import kotlin.math.abs
 
 class WifiScanWorker(
     private val context: Context,
-    workerParams: WorkerParameters
+    workerParams: WorkerParameters,
+    private val settingsRepo: SettingsRepository = SettingsRepository(context)
 ) : CoroutineWorker(context, workerParams) {
 
     companion object {
@@ -404,7 +405,7 @@ class WifiScanWorker(
         }
     }
 
-    private fun sendAlertNotification(networks: List<WifiNetworkInfo>) {
+    fun sendAlertNotification(networks: List<WifiNetworkInfo>) {
         try {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE)
                     as NotificationManager

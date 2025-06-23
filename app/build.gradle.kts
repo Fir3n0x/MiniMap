@@ -26,7 +26,7 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "2.17.3"
+        versionName = "2.18.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -90,11 +90,21 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric.v4103)
+    testImplementation(libs.mockk)
+    testImplementation(libs.junit)
+    testImplementation(libs.androidx.core)
 
     // Instrumented test
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core.v351)
     androidTestImplementation(libs.ui.test.junit4)
     androidTestImplementation(libs.androidx.navigation.testing.v275)
     androidTestImplementation(libs.kotlinx.coroutines.test.v164)
+    androidTestImplementation(libs.navigation.testing)
+
+    testImplementation(kotlin("test"))
+
+    debugImplementation(libs.ui.test.manifest)
 }
