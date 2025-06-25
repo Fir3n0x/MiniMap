@@ -517,6 +517,7 @@ fun FileViewerScreen(navController: NavController) {
                     }
                     matchesSearch && matchesFilter
                 }
+                    .sortedByDescending { it.timestamp }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
