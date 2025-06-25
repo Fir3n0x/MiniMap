@@ -34,9 +34,11 @@
 
 ## Screenshots
 
-![Home](screen/Home_Screen.jpg)
-![Live scan](screen/SavedWifi_Screen.jpg)
-![History](screen/Scan_Screen.jpg)
+<p float="left">
+  <img src="screen/Home_Screen.jpg" alt="Home" width="30%" />
+  <img src="screen/Scan_Screen.jpg" alt="Live scan"   width="30%" />
+  <img src="screen/SavedWifi_Screen.jpg" alt="History"   width="30%" />
+</p>
 
 ---
 
