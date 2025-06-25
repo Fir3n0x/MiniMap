@@ -62,7 +62,7 @@ class WifiRadarDetectionInstrumentedTest {
             .performClick()
 
         composeTestRule
-            .onNodeWithText("Export networks") // suppose que ton ExportDialog a ce titre
+            .onNodeWithText("Export networks")
             .assertIsDisplayed()
     }
 

@@ -1,8 +1,6 @@
 package com.example.minimap
 
 import android.content.Context
-import android.net.wifi.ScanResult
-import android.net.wifi.WifiManager
 import com.example.minimap.ui.theme.WifiScanWorker
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -14,14 +12,6 @@ import io.mockk.spyk
 import io.mockk.every
 import org.junit.Assert.assertEquals
 import androidx.work.ListenableWorker.Result
-import com.example.minimap.data.preferences.SettingsRepository
-import io.mockk.Runs
-import io.mockk.coEvery
-import io.mockk.just
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
-import org.mockito.kotlin.any
-import org.mockito.kotlin.verify
 
 @Config(sdk = [33])
 @RunWith(RobolectricTestRunner::class)

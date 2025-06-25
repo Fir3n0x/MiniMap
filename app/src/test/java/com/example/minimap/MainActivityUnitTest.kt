@@ -24,7 +24,6 @@ class MainActivityUnitTest {
             ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
         ).thenReturn(PackageManager.PERMISSION_GRANTED)
 
-        // Pour Android Q+, on suppose aussi background
         Mockito.`when`(
             ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         ).thenReturn(PackageManager.PERMISSION_GRANTED)
