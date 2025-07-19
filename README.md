@@ -113,6 +113,16 @@ MiniMap requests permissions at runtime with a clear rationale and gracefully d
 
 ---
 
+## License
+
+This project is released under a modified MIT License.
+
+While the code is open and available for educational and personal use, **commercial use is prohibited** without explicit permission from the author.
+
+If you wish to use this software in a commercial product, please contact me.
+
+--
+
 ### Author
 
 **Corentin Mahieu** – [@Fir3n0x](https://github.com/Fir3n0x)
