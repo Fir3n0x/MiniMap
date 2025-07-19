@@ -121,7 +121,7 @@ While the code is open and available for educational and personal use, **commerc
 
 If you wish to use this software in a commercial product, please contact me.
 
---
+---
 
 ### Author
 
