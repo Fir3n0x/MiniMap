@@ -37,6 +37,16 @@ import kotlin.math.abs
 // File to handle logic implementation of Radar Detection Screen
 
 
+// Retrieve network's frequency
+fun frequencyToChannel(freq: Int): Int {
+    return when {
+        freq in 2412..2484 -> (freq - 2407) / 5
+        freq in 5170..5895 -> (freq - 5000) / 5
+        freq in 5955..7115 -> (freq - 5950) / 5 // 6 GHz
+        else -> -1 // unknown
+    }
+}
+
 @OptIn(ExperimentalPermissionsApi::class)
 @SuppressLint("MissingPermission", "ServiceCast")
 @Composable
@@ -140,8 +150,8 @@ fun WifiScanScreen(context: Context, navController: NavController) {
                 val rssi = result.level
                 val bssid = result.BSSID
                 val capabilities = result.capabilities
-                val channel = result.channelWidth
                 val frequency = result.frequency
+                val channel = frequencyToChannel(result.frequency)
                 val centerFreq0 = result.centerFreq0
                 val centerFreq1 = result.centerFreq1
                 val timestamp = result.timestamp
@@ -164,6 +174,7 @@ fun WifiScanScreen(context: Context, navController: NavController) {
                         bssid = bssid,
                         rssi = rssi,
                         frequency = frequency,
+                        channel = channel,
                         capabilities = capabilities,
                         timestamp = timestamp,
                         label = securityLevel,
@@ -182,6 +193,7 @@ fun WifiScanScreen(context: Context, navController: NavController) {
                                 bssid = bssid,
                                 rssi = rssi,
                                 frequency = frequency,
+                                channel = channel,
                                 capabilities = capabilities,
                                 timestamp = timestamp,
                                 label = securityLevel,

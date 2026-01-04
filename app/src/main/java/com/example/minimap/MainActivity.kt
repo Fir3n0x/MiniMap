@@ -1,4 +1,4 @@
-package com.example.minimap
+ package com.example.minimap
 
 import android.Manifest
 import android.app.NotificationChannel

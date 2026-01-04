@@ -727,7 +727,8 @@ fun WifiItem(wifi: WifiNetworkInfo, onDelete: () -> Unit, onLocationClick: () ->
 
         Text(text = "BSSID: ${wifi.bssid}", color = Color.Gray, fontSize = 12.sp)
         Text(text = "RSSI: ${wifi.rssi} dBm", color = Color.Gray, fontSize = 12.sp)
-        Text(text = "Frequency: ${wifi.frequency} GHz", color = Color.Gray, fontSize = 12.sp)
+        Text(text = "Frequency: ${wifi.frequency} MHz", color = Color.Gray, fontSize = 12.sp)
+        Text(text = "Channel : ${wifi.channel}", color = Color.Gray, fontSize = 12.sp)
         Text(text = "Capabilities: ${wifi.capabilities}", color = Color.Gray, fontSize = 12.sp)
         Text(text = "Timestamp: $dateString", color = Color.Gray, fontSize = 12.sp)
         Text(text = "Security Level: ${wifi.label}", color = Color.LightGray, fontSize = 12.sp)

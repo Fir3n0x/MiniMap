@@ -43,22 +43,24 @@ fun readWifiNetworksFromCsv(context: Context, fileName: String): List<WifiNetwor
                 val bssid = parts[1]
                 val rssi = parts[2].toIntOrNull() ?: -100
                 val frequency = parts[3].toIntOrNull() ?: 0
-                val capabilities = parts[4]
+                val channel = parts[4].toIntOrNull() ?: -1
+                val capabilities = parts[5]
                 val date = try {
-                    dateFormat.parse(parts[5]) ?: Date()
+                    dateFormat.parse(parts[6]) ?: Date()
                 } catch (e: Exception) {
                     Date()
                 }
                 val timestamp = date.time
-                val label = stringToSecurityLevel(parts[6])
-                val latitude = parts[7].toDoubleOrNull() ?: 0.0
-                val longitude = parts[8].toDoubleOrNull() ?: 0.0
+                val label = stringToSecurityLevel(parts[7])
+                val latitude = parts[8].toDoubleOrNull() ?: 0.0
+                val longitude = parts[9].toDoubleOrNull() ?: 0.0
 
                 WifiNetworkInfo(
                     ssid = ssid,
                     bssid = bssid,
                     rssi = rssi,
                     frequency = frequency,
+                    channel = channel,
                     capabilities = capabilities,
                     timestamp = timestamp,
                     label = label,
@@ -90,7 +92,7 @@ fun appendNewWifisToCsv(context: Context, fileName: String, newNetworks: List<Wi
     newNetworks.forEach { network ->
         val key = "${network.ssid}:${network.bssid}"
         if (!knownKeys.contains(key)) {
-            val line = "${network.ssid};${network.bssid};${network.rssi};${network.frequency};${network.capabilities};${formattedTime};${network.label};${network.latitude};${network.longitude}\n"
+            val line = "${network.ssid};${network.bssid};${network.rssi};${network.frequency};${network.channel};${network.capabilities};${formattedTime};${network.label};${network.latitude};${network.longitude}\n"
             file.appendText(line)
             knownKeys.add(key)
         }
