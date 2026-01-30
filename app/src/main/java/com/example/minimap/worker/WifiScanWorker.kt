@@ -1,4 +1,4 @@
-package com.example.minimap.ui.theme
+package com.example.minimap.worker
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -22,6 +22,8 @@ import com.example.minimap.data.preferences.SettingsRepository
 import com.example.minimap.model.WifiClassifier
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiSecurityLevel
+import com.example.minimap.data.handler.appendNewWifisToCsv
+import com.example.minimap.data.handler.readWifiNetworksFromCsv
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -32,11 +34,6 @@ import java.util.Date
 import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.math.abs
-
-
-// File to handle notification process related to periodic scan when the applicaiton is closed
-
-
 
 class WifiScanWorker(
     private val context: Context,
@@ -359,21 +356,22 @@ class WifiScanWorker(
     }
 
     @SuppressLint("MissingPermission")
-    suspend fun getLastKnownLocation(context: Context): Location? = suspendCancellableCoroutine { cont ->
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+    suspend fun getLastKnownLocation(context: Context): Location? =
+        suspendCancellableCoroutine { cont ->
+            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
-        try {
-            fusedLocationClient.lastLocation
-                .addOnSuccessListener { location ->
-                    cont.resume(location)
-                }
-                .addOnFailureListener { exception ->
-                    cont.resume(null)
-                }
-        } catch (e: Exception) {
-            cont.resume(null)
+            try {
+                fusedLocationClient.lastLocation
+                    .addOnSuccessListener { location ->
+                        cont.resume(location)
+                    }
+                    .addOnFailureListener { exception ->
+                        cont.resume(null)
+                    }
+            } catch (e: Exception) {
+                cont.resume(null)
+            }
         }
-    }
 
 
 

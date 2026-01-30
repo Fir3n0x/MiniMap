@@ -1,6 +1,7 @@
-package com.example.minimap.ui.theme
+package com.example.minimap.ui.Screen
 
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.wifi.WifiManager
@@ -25,6 +26,8 @@ import com.example.minimap.data.preferences.SettingsRepository
 import com.example.minimap.model.WifiClassifier
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiScannerViewModel
+import com.example.minimap.data.handler.appendNewWifisToCsv
+import com.example.minimap.data.handler.readWifiNetworksFromCsv
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.delay
@@ -109,7 +112,7 @@ fun WifiScanScreen(context: Context, navController: NavController) {
     var newDiscoveredNetworks by remember { mutableStateOf<List<WifiNetworkInfo>>(emptyList()) }
 
 
-    val locationPermissionState = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
+    val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
 
     LaunchedEffect(Unit) {
         if (!locationPermissionState.permission.isEmpty()) {
@@ -237,7 +240,14 @@ fun WifiScanScreen(context: Context, navController: NavController) {
         }
     }
 
-    WifiRadarDetection(navController = navController, networks = wifiNetworks.toList(), newNetworks = newDiscoveredNetworks, isRunning = isRunning, onToggleRunning = {isRunning = !isRunning}, modifier = Modifier.fillMaxSize())
+    WifiRadarDetection(
+        navController = navController,
+        networks = wifiNetworks.toList(),
+        newNetworks = newDiscoveredNetworks,
+        isRunning = isRunning,
+        onToggleRunning = { isRunning = !isRunning },
+        modifier = Modifier.fillMaxSize()
+    )
 }
 
 
@@ -254,5 +264,12 @@ fun WifiScanPreview() {
 
     var isRunning: Boolean = true
 
-    WifiRadarDetection(navController = rememberNavController(), networks = mockNetworks, newNetworks = newDiscoveredNetworks, isRunning = isRunning, onToggleRunning = {isRunning = !isRunning}, modifier = Modifier.fillMaxSize())
+    WifiRadarDetection(
+        navController = rememberNavController(),
+        networks = mockNetworks,
+        newNetworks = newDiscoveredNetworks,
+        isRunning = isRunning,
+        onToggleRunning = { isRunning = !isRunning },
+        modifier = Modifier.fillMaxSize()
+    )
 }

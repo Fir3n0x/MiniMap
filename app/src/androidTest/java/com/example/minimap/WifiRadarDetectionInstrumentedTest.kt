@@ -3,7 +3,7 @@ package com.example.minimap
 import androidx.activity.ComponentActivity
 import androidx.navigation.compose.rememberNavController
 import com.example.minimap.model.WifiNetworkInfo
-import com.example.minimap.ui.theme.WifiRadarDetection
+import com.example.minimap.ui.Screen.WifiRadarDetection
 import org.junit.Rule
 import org.junit.Test
 import androidx.compose.ui.test.*

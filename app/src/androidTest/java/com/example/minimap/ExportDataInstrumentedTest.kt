@@ -5,7 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiSecurityLevel
-import com.example.minimap.ui.theme.exportNetworksToJson
+import com.example.minimap.data.handler.exportNetworksToJson
 import kotlinx.serialization.json.Json
 import org.junit.Assert
 import org.junit.Test

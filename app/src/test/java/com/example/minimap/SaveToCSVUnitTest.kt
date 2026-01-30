@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.minimap.model.WifiSecurityLevel
 import com.example.minimap.model.WifiNetworkInfo
-import com.example.minimap.ui.theme.appendNewWifisToCsv
-import com.example.minimap.ui.theme.readKnownWifiKeys
-import com.example.minimap.ui.theme.readWifiNetworksFromCsv
+import com.example.minimap.data.handler.appendNewWifisToCsv
+import com.example.minimap.data.handler.readKnownWifiKeys
+import com.example.minimap.data.handler.readWifiNetworksFromCsv
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test

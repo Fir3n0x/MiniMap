@@ -1,14 +1,5 @@
 package com.example.minimap
 
-import android.content.Context
-import androidx.test.core.app.ApplicationProvider
-import androidx.work.*
-import androidx.work.testing.WorkManagerTestInitHelper
-import com.example.minimap.model.WorkerManager
-import io.mockk.*
-import org.junit.Before
-import org.junit.Test
-
 
 class WorkerManagerUnitTest {
 //

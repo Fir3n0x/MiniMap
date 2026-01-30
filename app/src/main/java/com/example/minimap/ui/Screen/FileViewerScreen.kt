@@ -1,4 +1,4 @@
-package com.example.minimap.ui.theme
+package com.example.minimap.ui.Screen
 
 
 import android.content.ActivityNotFoundException
@@ -25,12 +25,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -53,6 +55,7 @@ import com.example.minimap.autowide
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.WifiSecurityLevel
 import com.example.minimap.model.getColor
+import com.example.minimap.data.handler.readWifiNetworksFromCsv
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -102,7 +105,7 @@ fun FileViewerScreen(navController: NavController) {
 
 
     if (showDialog) {
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { showDialog = false },
             confirmButton = {
                 Text(
@@ -135,7 +138,7 @@ fun FileViewerScreen(navController: NavController) {
 
 
     if (showDeleteDialog) {
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             confirmButton = {
                 Text(
@@ -219,7 +222,7 @@ fun FileViewerScreen(navController: NavController) {
 
 
     if (showWifiDeleteDialog) {
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { showWifiDeleteDialog = false },
             confirmButton = {
                 Text(
@@ -276,7 +279,7 @@ fun FileViewerScreen(navController: NavController) {
 
 
     if (showDeleteAllWifiDialog) {
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { showDeleteAllWifiDialog = false },
             confirmButton = {
                 Text(
@@ -424,8 +427,8 @@ fun FileViewerScreen(navController: NavController) {
                         color = Color.Green,
                         modifier = Modifier.weight(1f)
                     )
-                    androidx.compose.material3.Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Default.Delete,
+                    Icon(
+                        imageVector = Icons.Default.Delete,
                         contentDescription = "Delete All",
                         tint = Color.Red,
                         modifier = Modifier
@@ -532,8 +535,8 @@ fun FileViewerScreen(navController: NavController) {
 
                     Spacer(modifier = Modifier.weight(0.1f))
 
-                    androidx.compose.material3.Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Default.Add,
+                    Icon(
+                        imageVector = Icons.Default.Add,
                         contentDescription = "Save .csv file",
                         tint = Color.Green,
                         modifier = Modifier
@@ -545,8 +548,8 @@ fun FileViewerScreen(navController: NavController) {
 
                     Spacer(modifier = Modifier.weight(0.1f))
 
-                    androidx.compose.material3.Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Default.Delete,
+                    Icon(
+                        imageVector = Icons.Default.Delete,
                         contentDescription = "Delete All Wi-Fi",
                         tint = Color.Red,
                         modifier = Modifier
@@ -613,8 +616,8 @@ fun FileItem(file: File, fileName: String, onClick: () -> Unit, onDelete: () -> 
         Spacer(modifier = Modifier.weight(0.1f))
 
         // Share button
-        androidx.compose.material3.Icon(
-            imageVector = androidx.compose.material.icons.Icons.Default.Share,
+        Icon(
+            imageVector = Icons.Default.Share,
             contentDescription = "Share",
             tint = Color.Green,
             modifier = Modifier
@@ -627,8 +630,8 @@ fun FileItem(file: File, fileName: String, onClick: () -> Unit, onDelete: () -> 
         Spacer(modifier = Modifier.weight(0.1f))
 
         // Deleting button
-        androidx.compose.material3.Icon(
-            imageVector = androidx.compose.material.icons.Icons.Default.Close,
+        Icon(
+            imageVector = Icons.Default.Close,
             contentDescription = "Delete",
             tint = Color.Red,
             modifier = Modifier
@@ -693,8 +696,8 @@ fun WifiItem(wifi: WifiNetworkInfo, onDelete: () -> Unit, onLocationClick: () ->
 
 
             // Browse Location button
-            androidx.compose.material3.Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.LocationOn,
+            Icon(
+                imageVector = Icons.Default.LocationOn,
                 contentDescription = "Browse Location",
                 tint = Color.Green,
                 modifier = Modifier
@@ -710,8 +713,8 @@ fun WifiItem(wifi: WifiNetworkInfo, onDelete: () -> Unit, onLocationClick: () ->
 
 
             // Deleting button
-            androidx.compose.material3.Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.Close,
+            Icon(
+                imageVector = Icons.Default.Close,
                 contentDescription = "Delete",
                 tint = Color.Red,
                 modifier = Modifier

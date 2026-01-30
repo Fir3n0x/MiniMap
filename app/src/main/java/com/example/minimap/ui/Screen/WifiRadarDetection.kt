@@ -1,6 +1,7 @@
-package com.example.minimap.ui.theme
+package com.example.minimap.ui.Screen
 
 import android.content.Context
+import android.graphics.Paint
 import android.os.Build
 import android.os.SystemClock
 import android.os.VibrationEffect
@@ -30,6 +31,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
@@ -54,6 +57,8 @@ import com.example.minimap.data.preferences.SettingsRepository
 import com.example.minimap.model.PlusOneAnimation
 import com.example.minimap.model.WifiNetworkInfo
 import com.example.minimap.model.getColor
+import com.example.minimap.data.handler.ExportDialog
+import com.example.minimap.data.handler.exportNetworksToJson
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -287,7 +292,7 @@ fun WifiRadarDetection(
                     drawRect(
                         color = Color.Black,
                         topLeft = topLeft,
-                        size = androidx.compose.ui.geometry.Size(radarWidth, radarHeight)
+                        size = Size(radarWidth, radarHeight)
                     )
 
 
@@ -377,14 +382,14 @@ fun WifiRadarDetection(
                                         "+1",
                                         x,
                                         y + yOffset,
-                                        android.graphics.Paint().apply {
+                                        Paint().apply {
                                             color = android.graphics.Color.argb(
                                                 (alpha * 255).toInt(),
                                                 0, 255, 0
                                             )
                                             textSize = 40.sp.toPx()
                                             isFakeBoldText = true
-                                            textAlign = android.graphics.Paint.Align.CENTER
+                                            textAlign = Paint.Align.CENTER
                                         }
                                     )
                                 }
@@ -459,7 +464,7 @@ fun WifiRadarDetection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Retrieved wifis (${networks.size})" ,
+                        text = "Retrieved wifi (${networks.size})" ,
                         fontFamily = autowide,
                         color = Color.Green,
                         modifier = Modifier.weight(1f)
@@ -557,7 +562,7 @@ fun InfoButton(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(24.dp)
-            .background(Color.DarkGray, shape = androidx.compose.foundation.shape.CircleShape)
+            .background(Color.DarkGray, shape = CircleShape)
             .padding(4.dp)
             .clickable { onClick() },
         contentAlignment = Alignment.Center

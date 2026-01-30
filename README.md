@@ -2,6 +2,9 @@
 
 > **MiniMap** is an Android application that passively scans nearby Wi‑Fi networks, predicts their security level with an on‑device machine‑learning model, and lets you store, visualise, and share the results.
 
+<p align="center">
+  <img src="app/src/main/ic_launcher-playstore.png" alt="MiniMap Logo" width="180">
+</p>
 ---
 
 ## Table of contents

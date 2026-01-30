@@ -1,6 +1,4 @@
-package com.example.minimap.model
-
-// File to handle switch between different screens
+package com.example.minimap.ui.Screen
 
 sealed class Screen(val route : String){
     object Home : Screen("home")

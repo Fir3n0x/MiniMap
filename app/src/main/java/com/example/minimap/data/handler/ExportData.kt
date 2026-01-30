@@ -1,4 +1,4 @@
-package com.example.minimap.ui.theme
+package com.example.minimap.data.handler
 
 import android.content.Context
 import android.util.Log

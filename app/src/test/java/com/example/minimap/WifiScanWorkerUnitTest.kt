@@ -1,7 +1,7 @@
 package com.example.minimap
 
 import android.content.Context
-import com.example.minimap.ui.theme.WifiScanWorker
+import com.example.minimap.worker.WifiScanWorker
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith

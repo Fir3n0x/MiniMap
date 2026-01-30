@@ -1,8 +1,7 @@
-package com.example.minimap.model
+package com.example.minimap.worker
 
 import android.content.Context
 import android.util.Log
-import androidx.core.content.ContextCompat
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
@@ -10,10 +9,6 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import com.example.minimap.ui.theme.WifiScanWorker
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 // File to centralize the periodic scan of the application
@@ -63,10 +58,10 @@ fun logWorkerStatus(context: Context) {
     val workManager = WorkManager.getInstance(context)
     workManager.getWorkInfosForUniqueWorkLiveData("periodicWifiScan").observeForever { workInfos ->
         workInfos?.forEach { info ->
-            android.util.Log.d("WorkerStatus",
+            Log.d("WorkerStatus",
                 "Worker ${info.id}: ${info.state}, attempts: ${info.runAttemptCount}")
             if (info.state == WorkInfo.State.FAILED) {
-                android.util.Log.e("WorkerStatus", "Failure reason: ${info.outputData}")
+                Log.e("WorkerStatus", "Failure reason: ${info.outputData}")
             }
         }
     }

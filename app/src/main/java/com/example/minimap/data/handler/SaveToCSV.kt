@@ -1,4 +1,4 @@
-package com.example.minimap.ui.theme
+package com.example.minimap.data.handler
 
 import android.content.Context
 import android.util.Log
@@ -21,7 +21,7 @@ fun readKnownWifiKeys(context: Context, fileName: String): MutableSet<String> {
 
     file.forEachLine { line ->
         val parts = line.split(";")
-        if (parts.size >= 5) {
+        if (parts.size >= 2) { // Just 2 to retrieve the key
             val key = "${parts[0]}:${parts[1]}"
             knownKeys.add(key)
         }
@@ -37,7 +37,7 @@ fun readWifiNetworksFromCsv(context: Context, fileName: String): List<WifiNetwor
     return try {
         file.readLines().mapNotNull { line ->
             val parts = line.split(";")
-            if (parts.size >= 9) {
+            if (parts.size >= 10) { // 10 fields now
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 val ssid = parts[0]
                 val bssid = parts[1]
@@ -83,7 +83,10 @@ fun appendNewWifisToCsv(context: Context, fileName: String, newNetworks: List<Wi
     val file = File(context.filesDir, fileName)
     val knownKeys = readKnownWifiKeys(context, fileName)
 
-    file.appendText("") // create if doesn't exist
+    // create if doesn't exist
+    if (!file.exists()) {
+        file.createNewFile()
+    }
 
     val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
     val currentTime = System.currentTimeMillis()

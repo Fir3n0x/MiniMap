@@ -1,4 +1,4 @@
-package com.example.minimap.ui.theme
+package com.example.minimap.ui.Screen
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.minimap.autowide
 import com.example.minimap.data.preferences.SettingsRepository
-import com.example.minimap.model.Screen
+import com.example.minimap.data.handler.readWifiNetworksFromCsv
 import kotlinx.coroutines.delay
 
 
