@@ -47,6 +47,19 @@ jobs:
         distribution: 'temurin'
         java-version: 17
 
+    # KEYSTORE Section ---
+    - name: Decode Keystore
+      run: |
+        echo "${{ secrets.KEYSTORE_FILE }}" | base64 -d > $GITHUB_WORKSPACE/minimap-release-key.jks
+
+    - name: Create keystore.properties
+      run: |
+        echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > keystore.properties
+        echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> keystore.properties
+        echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> keystore.properties
+        echo "storeFile=$GITHUB_WORKSPACE/minimap-release-key.jks" >> keystore.properties
+    #---
+
     - name: Grant execute permission for gradlew
       run: chmod +x ./gradlew
 
