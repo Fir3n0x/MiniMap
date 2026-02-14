@@ -5,6 +5,7 @@
 <p align="center">
   <img src="app/src/main/ic_launcher-playstore.png" alt="MiniMap Logo" width="180">
 </p>
+
 ---
 
 ## Table of contents
