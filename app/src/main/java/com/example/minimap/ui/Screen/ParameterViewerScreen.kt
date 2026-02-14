@@ -59,6 +59,9 @@ fun ParameterViewerScreen(navController: NavController) {
     // State for current checked tab
     var selectedTab by rememberSaveable { mutableStateOf(ParamTab.Scan) }
 
+    // Retrieve system insets
+    val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
+
     // For each tab, we define an option list
     val scanOptions = listOf(
         ParamOption(
@@ -128,6 +131,7 @@ fun ParameterViewerScreen(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .padding(systemBarsPadding)
     ) {
         // ────────────────────────────────────────────────────────
         // A) Left column : button « < » + vertical tabs

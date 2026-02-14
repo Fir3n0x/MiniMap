@@ -19,11 +19,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -70,6 +73,9 @@ fun HomeScreen(navController: NavController) {
 
     val showVersionEnabledState by SettingsRepository(LocalContext.current).showVersionEnabledFlow.collectAsState(initial = false)
 
+    // Retrieve system insets
+    val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
+
     LaunchedEffect(Unit) {
         if (AppState.isFirstLaunch) {
             // First launch squential animation
@@ -94,7 +100,8 @@ fun HomeScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(Color.Black)
+            .padding(systemBarsPadding),
         contentAlignment = Alignment.TopCenter
     ) {
         // Depth effect with gradient circles

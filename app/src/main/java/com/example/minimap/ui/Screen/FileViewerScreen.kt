@@ -16,11 +16,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -70,6 +73,10 @@ fun FileViewerScreen(navController: NavController) {
     val context = LocalContext.current
     val tabs = listOf("Saved Wifi", "Observed Wifi")
     var selectedTabIndex by remember { mutableIntStateOf(0) }
+
+    // Retrieve system insets
+    val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
+
     var showDialog by remember { mutableStateOf(false) }
     var jsonContent by remember { mutableStateOf("") }
 
@@ -362,7 +369,11 @@ fun FileViewerScreen(navController: NavController) {
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(Color.Black)
+        .padding(systemBarsPadding)
+    ) {
         // Tabs
         Row(
             modifier = Modifier
