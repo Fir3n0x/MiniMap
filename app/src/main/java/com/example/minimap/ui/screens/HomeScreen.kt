@@ -155,22 +155,31 @@ fun HomeScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize(),
             exit = fadeOut()
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                ScanButton(navController)
 
-                Spacer(modifier = Modifier.height(32.dp))
+            Box(modifier = Modifier.fillMaxSize()) {
 
-                MapDisplay(
-                    title = "MAP",
-                    modifier = Modifier,
-                    navController = navController
-                )
+                // SCAN centered
+                Box(
+                    modifier = Modifier.align(Alignment.Center)
+                ) {
+                    ScanButton(navController)
+                }
+
+                // MAP under SCAN
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(top = 440.dp)
+                ) {
+                    MapDisplay(
+                        title = "MAP",
+                        modifier = Modifier,
+                        navController = navController
+                    )
+                }
             }
         }
+
 
         // Bottom button with animation
         AnimatedVisibility(

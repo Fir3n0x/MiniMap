@@ -189,7 +189,10 @@ fun MapViewerScreen(navController: NavController) {
                             val locationOverlay =
                                 MyLocationNewOverlay(GpsMyLocationProvider(ctx), this)
                             locationOverlay.enableMyLocation()
-                            locationOverlay.enableFollowLocation() // Follow position if moving
+                            //locationOverlay.enableFollowLocation() // Follow position if moving
+
+                            locationOverlay.isDrawAccuracyEnabled = true
+
                             overlays.add(locationOverlay)
 
 
@@ -220,7 +223,7 @@ fun MapViewerScreen(navController: NavController) {
 
                                     val clusterColor = when (worstSecurity) {
                                         3 -> AndroidColor.RED
-                                        2 -> AndroidColor.YELLOW
+                                        2 -> AndroidColor.rgb(218, 165, 32)
                                         1 -> AndroidColor.GREEN
                                         else -> AndroidColor.GRAY
                                     }
@@ -343,7 +346,7 @@ private fun createWifiMarker(context: Context, mapView: MapView, wifi: WifiNetwo
 
         val markerColor = when (wifi.label) {
             WifiSecurityLevel.SAFE -> AndroidColor.GREEN
-            WifiSecurityLevel.MEDIUM -> AndroidColor.YELLOW
+            WifiSecurityLevel.MEDIUM -> AndroidColor.rgb(218, 165, 32)
             WifiSecurityLevel.DANGEROUS -> AndroidColor.RED
             else -> AndroidColor.GRAY
         }
@@ -389,35 +392,28 @@ private fun createMarkerIcon(context: Context, text: String, backgroundColor: In
 private fun createGroupedWifiMarker(context: Context, mapView: MapView, wifis: List<WifiNetworkInfo>): Marker {
     val firstWifi = wifis[0]
 
+    // Count the occurrences
+    val securityCounts = wifis.groupingBy { it.label }.eachCount()
+    val safeCount = securityCounts[WifiSecurityLevel.SAFE] ?: 0
+    val mediumCount = securityCounts[WifiSecurityLevel.MEDIUM] ?: 0
+    val dangerousCount = securityCounts[WifiSecurityLevel.DANGEROUS] ?: 0
+
     return Marker(mapView).apply {
         position = GeoPoint(firstWifi.latitude, firstWifi.longitude)
         title = "${wifis.size} WiFi networks here"
 
-        snippet = buildString {
-            wifis.forEachIndexed { index, wifi ->
-                append("${index + 1}. ${wifi.ssid}")
-                append(" (${wifi.label}, ${wifi.rssi} dBm)")
-                if (index < wifis.size - 1) append("\n")
-            }
-        }
+        snippet = wifis.mapIndexed { index, wifi ->
+            "${index + 1}. ${wifi.ssid} (${wifi.label}, ${wifi.rssi} dBm)"
+        }.joinToString("\n")
 
-        val worstSecurity = wifis.maxByOrNull { wifi ->
-            when (wifi.label) {
-                WifiSecurityLevel.DANGEROUS -> 3
-                WifiSecurityLevel.MEDIUM -> 2
-                WifiSecurityLevel.SAFE -> 1
-                else -> 0
-            }
-        }?.label
-
-        val markerColor = when (worstSecurity) {
-            WifiSecurityLevel.DANGEROUS -> AndroidColor.RED
-            WifiSecurityLevel.MEDIUM -> AndroidColor.YELLOW
-            WifiSecurityLevel.SAFE -> AndroidColor.GREEN
-            else -> AndroidColor.GRAY
+        // Color = most frequent level
+        val clusterColor = when {
+            dangerousCount >= mediumCount && dangerousCount >= safeCount -> AndroidColor.RED
+            mediumCount >= safeCount -> AndroidColor.rgb(218, 165, 32)
+            else -> AndroidColor.GREEN
         }
 
         // Personalized marker with number
-        icon = createMarkerIcon(context, "${wifis.size} WiFi", markerColor)
+        icon = createMarkerIcon(context, "${wifis.size} WiFi", clusterColor)
     }
 }
