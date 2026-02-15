@@ -27,13 +27,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.testing.TestNavHostController
 import com.example.minimap.data.preferences.SettingsRepository
-import com.example.minimap.ui.Screen.Screen
+import com.example.minimap.ui.navigation.AppNavigation
+import com.example.minimap.ui.screens.Screen
 import com.example.minimap.worker.WorkerManager
 import com.example.minimap.worker.logWorkerStatus
-import com.example.minimap.ui.Screen.FileViewerScreen
-import com.example.minimap.ui.Screen.HomeScreen
-import com.example.minimap.ui.Screen.ParameterViewerScreen
-import com.example.minimap.ui.Screen.WifiScanScreen
+import com.example.minimap.ui.screens.FileViewerScreen
+import com.example.minimap.ui.screens.HomeScreen
+import com.example.minimap.ui.screens.ParameterViewerScreen
+import com.example.minimap.ui.screens.WifiScanScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -97,23 +98,7 @@ class MainActivity : ComponentActivity() {
 
             logWorkerStatus(context)
 
-            NavHost(navController = navController, startDestination = Screen.Home.route) {
-                composable(Screen.Home.route){
-                    HomeScreen(navController)
-                }
-
-                composable(Screen.WifiScan.route){
-                    val context = LocalContext.current
-                    WifiScanScreen(context, navController)
-                }
-                composable(Screen.FileViewer.route){
-                    FileViewerScreen(navController = navController)
-                }
-
-                composable(Screen.ParameterViewer.route){
-                    ParameterViewerScreen(navController = navController)
-                }
-            }
+            AppNavigation()
         }
     }
 

@@ -1,4 +1,4 @@
-package com.example.minimap.ui.Screen
+package com.example.minimap.ui.screens
 
 
 import android.Manifest
@@ -12,6 +12,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -101,8 +102,8 @@ fun WifiScanScreen(context: Context, navController: NavController) {
     var isRunning by remember { mutableStateOf(true) }
 
 
-    var currentLatitude by remember { mutableStateOf(0.0) }
-    var currentLongitude by remember { mutableStateOf(0.0) }
+    var currentLatitude by remember { mutableDoubleStateOf(0.0) }
+    var currentLongitude by remember { mutableDoubleStateOf(0.0) }
 
 
     // Initialize classifier

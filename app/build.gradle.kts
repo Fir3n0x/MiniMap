@@ -38,7 +38,7 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "2.21.8"
+        versionName = "2.22.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -107,6 +107,9 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.play.services.location.v2101)
     implementation(libs.kotlinx.coroutines.android)
+    // Handle OSMDroid for map
+    implementation(libs.osmdroid.android)
+    implementation("com.github.MKergall:osmbonuspack:6.9.0") // https://github.com/MKergall/osmbonuspack
 
     // Unit test
     testImplementation(libs.junit)

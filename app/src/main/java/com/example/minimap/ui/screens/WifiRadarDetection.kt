@@ -1,4 +1,4 @@
-package com.example.minimap.ui.Screen
+package com.example.minimap.ui.screens
 
 import android.content.Context
 import android.graphics.Paint

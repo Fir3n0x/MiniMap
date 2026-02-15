@@ -1,4 +1,4 @@
-package com.example.minimap.ui.Screen
+package com.example.minimap.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
@@ -27,7 +27,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +45,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -69,6 +72,7 @@ fun HomeScreen(navController: NavController) {
     var showTitle by remember { mutableStateOf(false) }
     var showUserInfo by remember { mutableStateOf(false) }
     var showScanButton by remember { mutableStateOf(false) }
+    var showMapButton by remember { mutableStateOf(false) }
     var showBottomButtons by remember { mutableStateOf(false) }
 
     val showVersionEnabledState by SettingsRepository(LocalContext.current).showVersionEnabledFlow.collectAsState(initial = false)
@@ -85,6 +89,8 @@ fun HomeScreen(navController: NavController) {
             delay(400)
             showScanButton = true
             delay(400)
+            showMapButton = true
+            delay(400)
             showBottomButtons = true
             delay(700)
             AppState.isFirstLaunch = false
@@ -93,6 +99,7 @@ fun HomeScreen(navController: NavController) {
             showTitle = true
             showUserInfo = true
             showScanButton = true
+            showMapButton = true
             showBottomButtons = true
         }
     }
@@ -141,15 +148,27 @@ fun HomeScreen(navController: NavController) {
             UserInfoWithWifiIndicator()
         }
 
-        // SCAN button with animation
+        // SCAN button & MAP button with animation
         AnimatedVisibility(
             visible = showScanButton,
             enter = if (AppState.isFirstLaunch) fadeIn() + expandVertically() else fadeIn(animationSpec = tween(0)),
             modifier = Modifier.fillMaxSize(),
             exit = fadeOut()
         ) {
-            Box(contentAlignment = Alignment.Center) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 ScanButton(navController)
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                MapDisplay(
+                    title = "MAP",
+                    modifier = Modifier,
+                    navController = navController
+                )
             }
         }
 
@@ -226,6 +245,39 @@ private fun ScanButton(navController: NavController) {
     }
 }
 
+@Composable
+private fun MapDisplay(
+    title: String,
+    modifier: Modifier,
+    navController: NavController
+) {
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .width(160.dp)
+            .height(70.dp)
+            .background(
+                color = Color(0xFF1E2624).copy(alpha = 0.8f),
+                shape = RoundedCornerShape(22.dp)
+            )
+            .border(
+                width = 2.dp,
+                color = Color.White.copy(alpha = 0.7f),
+                shape = RoundedCornerShape(22.dp)
+            )
+            .then(modifier.clickable { navController.navigate(Screen.MapViewer.route) })
+            .padding(16.dp)
+    ) {
+        Text(
+            text = title,
+            color = Color.White.copy(alpha = 0.7f),
+            fontFamily = autowide,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
 
 @Composable
 private fun TerminalTitle(animate: Boolean = true, showVersion: Boolean = false) {

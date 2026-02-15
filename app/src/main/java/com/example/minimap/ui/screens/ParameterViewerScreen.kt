@@ -1,4 +1,4 @@
-package com.example.minimap.ui.Screen
+package com.example.minimap.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
